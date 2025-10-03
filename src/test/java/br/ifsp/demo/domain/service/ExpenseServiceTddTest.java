@@ -1,5 +1,8 @@
 package br.ifsp.demo.domain.service;
 
+import br.ifsp.demo.domain.model.Expense;
+import br.ifsp.demo.domain.model.ExpenseType;
+import br.ifsp.demo.domain.port.ExpenseRepositoryPort;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.Tag;
 
@@ -27,11 +30,11 @@ class ExpenseServiceTddTest {
     @DisplayName("C01 - Deve registrar despesa válida com valor limite (0.01)")
     void shouldCreateExpenseWithValidDataAndLimitValue() {
         var userId = "user-1";
-        var amount = new BigDecimal("0.01"); // valor limite > 0
+        var amount = new BigDecimal("0.01");
         var expense = Expense.of(
                 userId, amount, ExpenseType.DEBIT,
                 "Almoço", Instant.parse("2025-10-01T12:00:00Z"),
-                null // sem categoria
+                null
         );
 
         when(expenseRepo.save(expense)).thenReturn(expense.withId("e-1"));
