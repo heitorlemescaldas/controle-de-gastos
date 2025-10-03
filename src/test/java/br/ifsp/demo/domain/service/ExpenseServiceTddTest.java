@@ -4,7 +4,6 @@ import br.ifsp.demo.domain.model.Expense;
 import br.ifsp.demo.domain.model.ExpenseType;
 import br.ifsp.demo.domain.port.ExpenseRepositoryPort;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.Tag;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -49,5 +48,60 @@ class ExpenseServiceTddTest {
         assertThat(saved.occurredAt()).isEqualTo(Instant.parse("2025-10-01T12:00:00Z"));
         assertThat(saved.categoryId()).isNull();
         verify(expenseRepo).save(expense);
+    }
+
+    // C02/US01: Tentar registrar uma despesa com valor nulo ou negativo #14
+    @Test
+    @DisplayName("C02 - Não deve aceitar amount = 0.00")
+    void shouldRejectZeroAmount() {
+        var expenseRepo = this.expenseRepo;
+        var sut = this.sut;
+
+        var expense = br.ifsp.demo.domain.model.Expense.of(
+                "user-1", new java.math.BigDecimal("0.00"),
+                br.ifsp.demo.domain.model.ExpenseType.DEBIT,
+                "Compra X", java.time.Instant.parse("2025-10-01T10:00:00Z"),
+                null
+        );
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> sut.create(expense))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("valor deve ser positivo");
+
+        org.mockito.Mockito.verify(expenseRepo, org.mockito.Mockito.never()).save(org.mockito.Mockito.any());
+    }
+
+    @Test
+    @DisplayName("C02 - Não deve aceitar amount negativo")
+    void shouldRejectNegativeAmount() {
+        var expense = br.ifsp.demo.domain.model.Expense.of(
+                "user-1", new java.math.BigDecimal("-0.01"),
+                br.ifsp.demo.domain.model.ExpenseType.DEBIT,
+                "Compra Y", java.time.Instant.parse("2025-10-01T10:05:00Z"),
+                null
+        );
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> sut.create(expense))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("valor deve ser positivo");
+
+        org.mockito.Mockito.verify(expenseRepo, org.mockito.Mockito.never()).save(org.mockito.Mockito.any());
+    }
+
+    @Test
+    @DisplayName("C02 - Não deve aceitar amount nulo")
+    void shouldRejectNullAmount() {
+        var expense = br.ifsp.demo.domain.model.Expense.of(
+                "user-1", null,
+                br.ifsp.demo.domain.model.ExpenseType.DEBIT,
+                "Compra Z", java.time.Instant.parse("2025-10-01T10:10:00Z"),
+                null
+        );
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> sut.create(expense))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("valor deve ser positivo");
+
+        org.mockito.Mockito.verify(expenseRepo, org.mockito.Mockito.never()).save(org.mockito.Mockito.any());
     }
 }
