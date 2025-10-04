@@ -167,4 +167,28 @@ class ExpenseServiceTddTest {
         verify(expenseRepo, never()).save(any());
     }
 
+    // C05/US01: Registrar despesa e verificar o estado do agregado #17
+    @Test
+    @DisplayName("C05 - Deve normalizar descrição (trim) e retornar o agregado salvo com id")
+    void shouldNormalizeDescriptionAndReturnSavedAggregate() {
+        var expense = Expense.of(
+                "user-1", new BigDecimal("23.90"), ExpenseType.DEBIT,
+                "  Estacionamento  ", Instant.parse("2025-10-01T09:00:00Z"),
+                null
+        );
+
+        // Quando o repositório for chamado, vamos validar que já veio TRIMADO
+        when(expenseRepo.save(any())).thenAnswer(inv -> {
+            var arg = (Expense) inv.getArgument(0);
+            assertThat(arg.description()).isEqualTo("Estacionamento"); // precisa vir trimado
+            return arg.withId("e-2"); // o repo retorna com id
+        });
+
+        var saved = sut.create(expense);
+
+        assertThat(saved.id()).isEqualTo("e-2");
+        assertThat(saved.description()).isEqualTo("Estacionamento");
+        assertThat(saved.amount()).isEqualByComparingTo("23.90");
+        assertThat(saved.userId()).isEqualTo("user-1");
+    }
 }
