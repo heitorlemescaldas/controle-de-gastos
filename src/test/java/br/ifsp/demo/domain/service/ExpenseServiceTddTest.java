@@ -8,10 +8,10 @@ import org.junit.jupiter.api.*;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.assertj.core.api.Assertions.*; 
+import br.ifsp.demo.domain.port.CategoryRepositoryPort;
 
 @Tag("UnitTest")
 @Tag("TDD")
@@ -136,6 +136,33 @@ class ExpenseServiceTddTest {
         assertThatThrownBy(() -> sut.create(expense))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("descrição obrigatória");
+
+        verify(expenseRepo, never()).save(any());
+    }
+
+    // C04/US01: Tentar registrar uma despesa com categoria inexistente #16
+    @Test
+    @DisplayName("C04 - Não deve aceitar categoria inexistente")
+    void shouldRejectWhenCategoryDoesNotExist() {
+        var userId = "user-1";
+        var categoryId = "cat-404";
+
+        var expense = Expense.of(
+                userId, new BigDecimal("15.00"), ExpenseType.DEBIT,
+                "Mercado", Instant.parse("2025-10-01T10:00:00Z"),
+                categoryId
+        );
+
+        // mock do repo de categorias
+        CategoryRepositoryPort categoryRepo = mock(CategoryRepositoryPort.class);
+        when(categoryRepo.existsByIdAndUser(categoryId, userId)).thenReturn(false);
+
+        // cria um SUT específico com dois repositórios (mantém o SUT padrão para os demais testes)
+        ExpenseService sutWithCategory = new ExpenseService(expenseRepo, categoryRepo);
+
+        assertThatThrownBy(() -> sutWithCategory.create(expense))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("categoria inexistente");
 
         verify(expenseRepo, never()).save(any());
     }
