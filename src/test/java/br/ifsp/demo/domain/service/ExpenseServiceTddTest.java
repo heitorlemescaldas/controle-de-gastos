@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @Tag("UnitTest")
@@ -104,4 +105,38 @@ class ExpenseServiceTddTest {
 
         org.mockito.Mockito.verify(expenseRepo, org.mockito.Mockito.never()).save(org.mockito.Mockito.any());
     }
+
+    // C03/US01: Tentar registrar uma despesa com descrição vazia ou nula #15
+    @Test
+    @DisplayName("C03 - Não deve aceitar descrição nula")
+    void shouldRejectNullDescription() {
+        var expense = Expense.of(
+                "user-1", new BigDecimal("10.00"), ExpenseType.DEBIT,
+                null, Instant.parse("2025-10-01T10:00:00Z"),
+                null
+        );
+
+        assertThatThrownBy(() -> sut.create(expense))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("descrição obrigatória");
+
+        verify(expenseRepo, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("C03 - Não deve aceitar descrição em branco")
+    void shouldRejectBlankDescription() {
+        var expense = Expense.of(
+                "user-1", new BigDecimal("10.00"), ExpenseType.DEBIT,
+                "   ", Instant.parse("2025-10-01T10:00:00Z"),
+                null
+        );
+
+        assertThatThrownBy(() -> sut.create(expense))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("descrição obrigatória");
+
+        verify(expenseRepo, never()).save(any());
+    }
+
 }
