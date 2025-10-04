@@ -14,15 +14,14 @@ public class ExpenseService {
     }
 
     public Expense create(Expense expense) {
-        // validação mínima para C02
-        if (expense == null) {
-            throw new IllegalArgumentException("despesa obrigatória");
-        }
-        if (expense.amount() == null || expense.amount().compareTo(BigDecimal.ZERO) <= 0) {
+        if (expense == null) throw new IllegalArgumentException("despesa obrigatória");
+        if (expense.amount() == null || expense.amount().compareTo(BigDecimal.ZERO) <= 0)
             throw new IllegalArgumentException("valor deve ser positivo");
-        }
 
-        // C01 (happy path): delega ao repositório
+        // 👇 C03: validar descrição
+        if (expense.description() == null || expense.description().isBlank())
+            throw new IllegalArgumentException("descrição obrigatória");
+            
         return expenseRepo.save(expense);
     }
 }
