@@ -113,4 +113,23 @@ class CategoryServiceTddTest {
 
         verify(repo, never()).save(any());
     }
+
+    // C04/US02: Impedir criação de subcategoria se categoria raiz não existir #26
+    @Test
+    @DisplayName("C04/US02 - Deve rejeitar criação de subcategoria quando parent não existe")
+    void shouldRejectChildCreationWhenParentDoesNotExist() {
+        var userId   = "user-1";
+        var parentId = "cat-missing";
+        var input    = Category.child(userId, "Transporte", parentId);
+
+        // parent NÃO existe
+        when(repo.existsByIdAndUser(parentId, userId)).thenReturn(false);
+
+        assertThatThrownBy(() -> sut.create(input))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("categoria pai inexistente");
+
+        // não deve tentar salvar
+        verify(repo, never()).save(any());
+    }
 }

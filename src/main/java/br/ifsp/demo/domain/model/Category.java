@@ -1,7 +1,5 @@
 package br.ifsp.demo.domain.model;
 
-import java.util.Objects;
-
 public final class Category {
     private final String id;
     private final String userId;
