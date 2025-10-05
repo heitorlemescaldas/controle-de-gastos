@@ -77,4 +77,40 @@ class CategoryServiceTddTest {
         verify(repo).save(any(Category.class));
     }
 
+    // C03/US02: Impedir duplicidade de categoria (case-insensitive + trim) #25
+    @Test
+    @DisplayName("C03/US02 - Deve impedir duplicidade de categoria raiz (ignora case e trim)")
+    void shouldRejectDuplicateRootNameIgnoringCaseAndTrim() {
+        var userId = "user-1";
+        var input  = Category.root(userId, "  ALIMENTAÇÃO  ");
+
+        // o service normaliza para "alimentação" e pergunta ao repo por (userId, parentId=null, normalizedName)
+        when(repo.existsByUserAndParentAndNameNormalized(userId, null, "alimentação")).thenReturn(true);
+
+        assertThatThrownBy(() -> sut.create(input))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("categoria duplicada");
+
+        verify(repo, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("C03/US02 - Deve impedir duplicidade de subcategoria entre irmãos (ignora case e trim)")
+    void shouldRejectDuplicateChildNameIgnoringCaseAndTrim() {
+        var userId   = "user-1";
+        var parentId = "cat-root";
+        var input    = Category.child(userId, "  MeRcAdO  ", parentId);
+
+        // parent existe (happy path para parent)
+        when(repo.existsByIdAndUser(parentId, userId)).thenReturn(true);
+
+        // normalizado vira "mercado"
+        when(repo.existsByUserAndParentAndNameNormalized(userId, parentId, "mercado")).thenReturn(true);
+
+        assertThatThrownBy(() -> sut.create(input))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("categoria duplicada");
+
+        verify(repo, never()).save(any());
+    }
 }
