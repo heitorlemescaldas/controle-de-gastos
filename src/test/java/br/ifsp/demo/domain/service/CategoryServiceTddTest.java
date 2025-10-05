@@ -2,10 +2,12 @@ package br.ifsp.demo.domain.service;
 
 import br.ifsp.demo.domain.model.Category;
 import br.ifsp.demo.domain.port.CategoryRepositoryPort;
+import br.ifsp.demo.domain.port.ExpenseRepositoryPort;
 import org.junit.jupiter.api.*;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @Tag("UnitTest")
@@ -131,5 +133,45 @@ class CategoryServiceTddTest {
 
         // não deve tentar salvar
         verify(repo, never()).save(any());
+    }
+
+    // C05/US02: Impedir exclusão se categoria tiver subcategorias ou estiver em uso #20
+    @Test
+    @DisplayName("C05/US02 - Deve impedir exclusão quando categoria possui subcategorias")
+    void shouldRejectDeletionWhenCategoryHasChildren() {
+        var userId = "user-1";
+        var catId  = "cat-1";
+
+        // mocks específicos para este cenário
+        ExpenseRepositoryPort expenseRepo = mock(ExpenseRepositoryPort.class);
+        CategoryService deleteSut = new CategoryService(repo, expenseRepo);
+
+        when(repo.hasChildren(catId, userId)).thenReturn(true);      // possui filhos
+        when(expenseRepo.existsByUserAndCategory(userId, catId)).thenReturn(false);
+
+        assertThatThrownBy(() -> deleteSut.delete(catId, userId))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("possui subcategorias");
+
+        verify(repo, never()).delete(anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("C05/US02 - Deve impedir exclusão quando categoria está em uso por despesas")
+    void shouldRejectDeletionWhenCategoryIsInUse() {
+        var userId = "user-1";
+        var catId  = "cat-2";
+
+        ExpenseRepositoryPort expenseRepo = mock(ExpenseRepositoryPort.class);
+        CategoryService deleteSut = new CategoryService(repo, expenseRepo);
+
+        when(repo.hasChildren(catId, userId)).thenReturn(false);     // não tem filhos
+        when(expenseRepo.existsByUserAndCategory(userId, catId)).thenReturn(true); // em uso
+
+        assertThatThrownBy(() -> deleteSut.delete(catId, userId))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("categoria em uso");
+
+        verify(repo, never()).delete(anyString(), anyString());
     }
 }
