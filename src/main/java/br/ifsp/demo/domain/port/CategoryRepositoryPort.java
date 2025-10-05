@@ -8,4 +8,7 @@ public interface CategoryRepositoryPort {
 
     // novo para US-02
     Category save(Category category);
+
+    // para us-3: verificação de duplicidade por nome normalizado (lower-case + trim) no escopo (userId, parentId)
+    boolean existsByUserAndParentAndNameNormalized(String userId, String parentId, String normalizedName);
 }

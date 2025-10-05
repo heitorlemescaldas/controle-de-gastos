@@ -17,18 +17,23 @@ public class CategoryService {
         if (category.name() == null || category.name().isBlank())
             throw new IllegalArgumentException("nome obrigatório");
 
-        // normalizar nome
-        var normalized = category.withName(category.name().trim());
+        // normalizações
+        var trimmedName = category.name().trim();
+        var normalizedName = trimmedName.toLowerCase();
+        var normalized = category.withName(trimmedName);
 
-        // C02: se for subcategoria, parent precisa existir para o usuário
+        // C02: se for subcategoria, parent precisa existir
         if (normalized.parentId() != null) {
             boolean parentExists = repo.existsByIdAndUser(normalized.parentId(), normalized.userId());
-            if (!parentExists) {
-                // a mensagem de erro específica será cobrada no C04 (negativo);
-                // por enquanto ta ok pq basta a verificação para o happy path da C02.
-                throw new IllegalArgumentException("categoria pai inexistente");
-            }
+            if (!parentExists) throw new IllegalArgumentException("categoria pai inexistente");
         }
+
+        // C03: impedir duplicidade por (user, parent, nome normalizado)
+        if (repo.existsByUserAndParentAndNameNormalized(
+                normalized.userId(), normalized.parentId(), normalizedName)) {
+            throw new IllegalArgumentException("categoria duplicada");
+        }
+
         return repo.save(normalized);
     }
 }
