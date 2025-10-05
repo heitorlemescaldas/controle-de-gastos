@@ -17,8 +17,18 @@ public class CategoryService {
         if (category.name() == null || category.name().isBlank())
             throw new IllegalArgumentException("nome obrigatório");
 
-        // normalizar nome (trim) antes de salvar
+        // normalizar nome
         var normalized = category.withName(category.name().trim());
+
+        // C02: se for subcategoria, parent precisa existir para o usuário
+        if (normalized.parentId() != null) {
+            boolean parentExists = repo.existsByIdAndUser(normalized.parentId(), normalized.userId());
+            if (!parentExists) {
+                // a mensagem de erro específica será cobrada no C04 (negativo);
+                // por enquanto ta ok pq basta a verificação para o happy path da C02.
+                throw new IllegalArgumentException("categoria pai inexistente");
+            }
+        }
         return repo.save(normalized);
     }
 }
