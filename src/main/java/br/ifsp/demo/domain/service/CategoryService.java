@@ -2,13 +2,22 @@ package br.ifsp.demo.domain.service;
 
 import br.ifsp.demo.domain.model.Category;
 import br.ifsp.demo.domain.port.CategoryRepositoryPort;
+import br.ifsp.demo.domain.port.ExpenseRepositoryPort;
 
 public class CategoryService {
 
     private final CategoryRepositoryPort repo;
+    private final ExpenseRepositoryPort expenseRepo; // pode ser null para cenários que não usam
 
+    // construtor existente (continua para C01..C03)
     public CategoryService(CategoryRepositoryPort repo) {
+        this(repo, null);
+    }
+
+    // novo construtor para operações que precisam checar uso em despesas
+    public CategoryService(CategoryRepositoryPort repo, ExpenseRepositoryPort expenseRepo) {
         this.repo = repo;
+        this.expenseRepo = expenseRepo;
     }
 
     public Category create(Category category) {
@@ -17,23 +26,35 @@ public class CategoryService {
         if (category.name() == null || category.name().isBlank())
             throw new IllegalArgumentException("nome obrigatório");
 
-        // normalizações
-        var trimmedName = category.name().trim();
+        var trimmedName    = category.name().trim();
         var normalizedName = trimmedName.toLowerCase();
-        var normalized = category.withName(trimmedName);
+        var normalized     = category.withName(trimmedName);
 
-        // C02: se for subcategoria, parent precisa existir
         if (normalized.parentId() != null) {
             boolean parentExists = repo.existsByIdAndUser(normalized.parentId(), normalized.userId());
             if (!parentExists) throw new IllegalArgumentException("categoria pai inexistente");
         }
 
-        // C03: impedir duplicidade por (user, parent, nome normalizado)
         if (repo.existsByUserAndParentAndNameNormalized(
                 normalized.userId(), normalized.parentId(), normalizedName)) {
             throw new IllegalArgumentException("categoria duplicada");
         }
 
         return repo.save(normalized);
+    }
+
+    // C05: exclusão com bloqueios
+    public void delete(String categoryId, String userId) {
+        if (categoryId == null || categoryId.isBlank()) throw new IllegalArgumentException("categoryId obrigatório");
+        if (userId == null || userId.isBlank())         throw new IllegalArgumentException("userId obrigatório");
+
+        if (repo.hasChildren(categoryId, userId)) {
+            throw new IllegalStateException("categoria possui subcategorias");
+        }
+        if (expenseRepo != null && expenseRepo.existsByUserAndCategory(userId, categoryId)) {
+            throw new IllegalStateException("categoria em uso");
+        }
+
+        repo.delete(categoryId, userId);
     }
 }
