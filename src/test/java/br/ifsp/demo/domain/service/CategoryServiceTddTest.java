@@ -3,9 +3,9 @@ package br.ifsp.demo.domain.service;
 import br.ifsp.demo.domain.model.Category;
 import br.ifsp.demo.domain.port.CategoryRepositoryPort;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.Tag;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @Tag("UnitTest")
@@ -45,4 +45,36 @@ class CategoryServiceTddTest {
 
         verify(repo).save(any(Category.class));
     }
+
+    // C02/US02: Criar subcategoria com sucesso #24
+    @Test
+    @DisplayName("C02/US02 - Deve criar subcategoria com nome normalizado, vinculada ao parent")
+    void shouldCreateChildCategorySuccessfully() {
+        var userId   = "user-1";
+        var parentId = "cat-root";
+        var input    = Category.child(userId, "  Supermercado  ", parentId);
+
+        // parent existe (sucesso)
+        when(repo.existsByIdAndUser(parentId, userId)).thenReturn(true);
+
+        // save deve receber já trimadp e com parentId correto
+        when(repo.save(any(Category.class))).thenAnswer(inv -> {
+            var arg = (Category) inv.getArgument(0);
+            assertThat(arg.name()).isEqualTo("Supermercado");
+            assertThat(arg.parentId()).isEqualTo(parentId);
+            assertThat(arg.userId()).isEqualTo(userId);
+            return arg.withId("cat-2");
+        });
+
+        var saved = sut.create(input);
+
+        assertThat(saved.id()).isEqualTo("cat-2");
+        assertThat(saved.name()).isEqualTo("Supermercado");
+        assertThat(saved.parentId()).isEqualTo(parentId);
+
+        // garante que o servico verificou a existencia do parent
+        verify(repo).existsByIdAndUser(parentId, userId);
+        verify(repo).save(any(Category.class));
+    }
+
 }
