@@ -29,13 +29,16 @@ public class ExpenseService {
         if (expense.description() == null || expense.description().isBlank())
             throw new IllegalArgumentException("descrição obrigatória");
 
-        // C04: se veio categoryId, ela precisa existir para o usuário
+        // C04: categoria existente (se informada)
         if (expense.categoryId() != null) {
             if (categoryRepo == null || !categoryRepo.existsByIdAndUser(expense.categoryId(), expense.userId())) {
                 throw new IllegalArgumentException("categoria inexistente");
             }
         }
 
-        return expenseRepo.save(expense);
+        // C05: normalizar descrição antes de salvar
+        var normalized = expense.withDescription(expense.description().trim());
+
+        return expenseRepo.save(normalized); // e retornar o que o repositório salvar (com id)
     }
 }

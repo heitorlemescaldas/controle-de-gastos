@@ -39,4 +39,8 @@ public final class Expense {
     public String description() { return description; }
     public Instant occurredAt() { return occurredAt; }
     public String categoryId() { return categoryId; }
+
+    public Expense withDescription(String newDescription) {
+        return new Expense(id, userId, amount, type, newDescription, occurredAt, categoryId);
+    }
 }

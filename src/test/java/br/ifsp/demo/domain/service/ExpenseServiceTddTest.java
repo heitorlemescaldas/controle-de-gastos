@@ -8,6 +8,8 @@ import org.junit.jupiter.api.*;
 import java.math.BigDecimal;
 import java.time.Instant;
 
+import org.mockito.ArgumentCaptor;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.assertj.core.api.Assertions.*; 
@@ -38,7 +40,7 @@ class ExpenseServiceTddTest {
                 null
         );
 
-        when(expenseRepo.save(expense)).thenReturn(expense.withId("e-1"));
+        when(expenseRepo.save(any(Expense.class))).thenReturn(expense.withId("e-1"));
 
         var saved = sut.create(expense);
 
@@ -49,7 +51,7 @@ class ExpenseServiceTddTest {
         assertThat(saved.description()).isEqualTo("Almoço");
         assertThat(saved.occurredAt()).isEqualTo(Instant.parse("2025-10-01T12:00:00Z"));
         assertThat(saved.categoryId()).isNull();
-        verify(expenseRepo).save(expense);
+        verify(expenseRepo).save(any(Expense.class));
     }
 
     // C02/US01: Tentar registrar uma despesa com valor nulo ou negativo #14
