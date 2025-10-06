@@ -195,27 +195,28 @@ class ExpenseServiceTddTest {
         assertThat(saved.userId()).isEqualTo("user-1");
     }
 
-    // C06/US02: Excluir subcategoria vazia com sucesso (sem transações) #27
     @Test
     @DisplayName("C06/US02 - Deve excluir subcategoria quando não possui filhos nem está em uso")
     void shouldDeleteChildCategoryWhenNoChildrenAndNotInUse() {
         var userId = "user-1";
         var catId  = "cat-child";
 
-        // usamos o mock 'repo' já da classe e criamos um mock para ExpenseRepo
-        ExpenseRepositoryPort expenseRepo = mock(ExpenseRepositoryPort.class);
-        CategoryService deleteSut = new CategoryService(repo, expenseRepo);
+        // 👇 mocks LOCAIS, independentes do campo 'repo' da classe
+        CategoryRepositoryPort categoryRepo = mock(CategoryRepositoryPort.class);
+        ExpenseRepositoryPort expenseRepo   = mock(ExpenseRepositoryPort.class);
 
-        when(repo.hasChildren(catId, userId)).thenReturn(false);                 // sem filhos
-        when(expenseRepo.existsByUserAndCategory(userId, catId)).thenReturn(false); // não está em uso
+        // SUT específico para este teste (usa os mocks locais)
+        CategoryService deleteSut = new CategoryService(categoryRepo, expenseRepo);
+
+        when(categoryRepo.hasChildren(catId, userId)).thenReturn(false);                 // sem filhos
+        when(expenseRepo.existsByUserAndCategory(userId, catId)).thenReturn(false);     // não está em uso
 
         // não deve lançar exceção
         assertThatCode(() -> deleteSut.delete(catId, userId)).doesNotThrowAnyException();
 
         // deve checar filhos, uso e então deletar
-        verify(repo).hasChildren(catId, userId);
+        verify(categoryRepo).hasChildren(catId, userId);
         verify(expenseRepo).existsByUserAndCategory(userId, catId);
-        verify(repo).delete(catId, userId);
+        verify(categoryRepo).delete(catId, userId);
     }
-
 }
