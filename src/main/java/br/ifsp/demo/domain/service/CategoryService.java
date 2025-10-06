@@ -9,7 +9,6 @@ import java.util.regex.Pattern;
 import java.util.Arrays;
 
 import java.util.List;
-import br.ifsp.demo.domain.model.CategoryNode;
 
 public class CategoryService {
 
