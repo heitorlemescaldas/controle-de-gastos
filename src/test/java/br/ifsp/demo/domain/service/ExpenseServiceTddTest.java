@@ -8,6 +8,8 @@ import org.junit.jupiter.api.*;
 import java.math.BigDecimal;
 import java.time.Instant;
 
+import br.ifsp.demo.domain.port.ExpenseRepositoryPort;
+
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -192,4 +194,28 @@ class ExpenseServiceTddTest {
         assertThat(saved.amount()).isEqualByComparingTo("23.90");
         assertThat(saved.userId()).isEqualTo("user-1");
     }
+
+    // C06/US02: Excluir subcategoria vazia com sucesso (sem transações) #27
+    @Test
+    @DisplayName("C06/US02 - Deve excluir subcategoria quando não possui filhos nem está em uso")
+    void shouldDeleteChildCategoryWhenNoChildrenAndNotInUse() {
+        var userId = "user-1";
+        var catId  = "cat-child";
+
+        // usamos o mock 'repo' já da classe e criamos um mock para ExpenseRepo
+        ExpenseRepositoryPort expenseRepo = mock(ExpenseRepositoryPort.class);
+        CategoryService deleteSut = new CategoryService(repo, expenseRepo);
+
+        when(repo.hasChildren(catId, userId)).thenReturn(false);                 // sem filhos
+        when(expenseRepo.existsByUserAndCategory(userId, catId)).thenReturn(false); // não está em uso
+
+        // não deve lançar exceção
+        assertThatCode(() -> deleteSut.delete(catId, userId)).doesNotThrowAnyException();
+
+        // deve checar filhos, uso e então deletar
+        verify(repo).hasChildren(catId, userId);
+        verify(expenseRepo).existsByUserAndCategory(userId, catId);
+        verify(repo).delete(catId, userId);
+    }
+
 }
