@@ -194,4 +194,27 @@ class CategoryServiceTddTest {
         // 2) deve atualizar descendentes trocando prefixo "Alimentação/" -> "Comida/"
         verify(repo).updatePathPrefix(userId, "Alimentação/", "Comida/");
     }
+
+    // C08/US02: Impedir mudança de nome para um caminho já existente #28
+    @Test
+    @DisplayName("C08/US02 - Deve bloquear rename quando novo path já existe")
+    void shouldRejectRenameWhenNewPathAlreadyExists() {
+        var userId = "user-1";
+        var catId  = "cat-root";
+
+        // path atual da raiz
+        when(repo.findPathById(catId, userId)).thenReturn("Alimentação");
+
+        // renomear para "Comida" => novo path "Comida" (conflito)
+        when(repo.existsByUserAndPath(userId, "Comida")).thenReturn(true);
+
+        assertThatThrownBy(() -> sut.rename(catId, userId, "  Comida  "))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("caminho já existe");
+
+        // não deve tentar renomear nem atualizar prefixo
+        verify(repo, never()).rename(anyString(), anyString(), anyString(), anyString());
+        verify(repo, never()).updatePathPrefix(anyString(), anyString(), anyString());
+    }
+
 }
