@@ -146,4 +146,37 @@ class ReportServiceTddTest {
         verify(categoryRepo, atLeastOnce()).findPathById(anyString(), eq(user));
     }
 
+    @Test
+    @DisplayName("C03/US03 - Deve retornar relatório vazio quando a árvore de categoria não tem lançamentos no período")
+    void shouldReturnEmptyReportWhenCategoryTreeHasNoTransactionsInPeriod() {
+        var user  = "user-1";
+        var start = Instant.parse("2025-10-01T00:00:00Z");
+        var end   = Instant.parse("2025-10-31T23:59:59Z");
+
+        var catFood = "cat-food";
+
+        // raiz existe, mas não há despesas na árvore dela no período
+        when(categoryRepo.findPathById(catFood, user)).thenReturn("Alimentação");
+
+        // há despesas no período, porém fora da árvore (ou sem categoria)
+        var otherCat = "cat-transport";
+        var e1 = Expense.of(user, new BigDecimal("30.00"), ExpenseType.DEBIT,  "Ônibus",
+                Instant.parse("2025-10-12T08:00:00Z"), otherCat);       // fora
+        var e2 = Expense.of(user, new BigDecimal("10.00"), ExpenseType.CREDIT, "Bônus",
+                Instant.parse("2025-10-15T09:00:00Z"), null);            // sem categoria
+        when(categoryRepo.findPathById(otherCat, user)).thenReturn("Transporte");
+        when(expenseRepo.findByUserAndPeriod(user, start, end)).thenReturn(List.of(e1, e2));
+
+        // AÇÃO
+        Report r = sut.generateForCategoryTree(user, start, end, catFood);
+
+        // RESULTADO: sem itens e totais zerados
+        assertThat(r.items()).isEmpty();
+        assertThat(r.totalDebit()).isEqualByComparingTo("0.00");
+        assertThat(r.totalCredit()).isEqualByComparingTo("0.00");
+        assertThat(r.balance()).isEqualByComparingTo("0.00");
+
+        verify(expenseRepo).findByUserAndPeriod(user, start, end);
+        verify(categoryRepo, atLeastOnce()).findPathById(anyString(), eq(user));
+    }
 }
