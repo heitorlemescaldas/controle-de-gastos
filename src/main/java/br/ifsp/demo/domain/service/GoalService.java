@@ -14,6 +14,9 @@ import java.time.YearMonth;
 import java.time.ZoneOffset;
 import java.util.List;
 
+import org.springframework.stereotype.Service;
+
+@Service
 public class GoalService {
 
     private final GoalRepositoryPort goalRepo;

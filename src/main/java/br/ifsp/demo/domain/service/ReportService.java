@@ -8,6 +8,9 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.*;
 
+import org.springframework.stereotype.Service;
+
+@Service
 public class ReportService {
 
     private final ExpenseRepositoryPort expenseRepo;

@@ -6,6 +6,9 @@ import br.ifsp.demo.domain.port.ExpenseRepositoryPort;
 
 import java.math.BigDecimal;
 
+import org.springframework.stereotype.Service;
+
+@Service
 public class ExpenseService {
 
     private final ExpenseRepositoryPort expenseRepo;
