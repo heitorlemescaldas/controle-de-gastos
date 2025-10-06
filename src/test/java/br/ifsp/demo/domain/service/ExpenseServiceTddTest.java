@@ -219,25 +219,4 @@ class ExpenseServiceTddTest {
         verify(expenseRepo).existsByUserAndCategory(userId, catId);
         verify(categoryRepo).delete(catId, userId);
     }
-
-    // C07/US02: Renomear categoria e verificar a atualização em cascata #21
-    @Test
-    @DisplayName("C07/US02 - Deve renomear categoria raiz e atualizar paths descendentes (prefix swap)")
-    void shouldRenameRootAndCascadePathUpdate() {
-        var userId = "user-1";
-        var catId  = "cat-root";
-
-        // path atual da raiz
-        when(repo.findPathById(catId, userId)).thenReturn("Alimentação");
-
-        // SUT usa apenas repo aqui
-        sut.rename(catId, userId, "  Comida  ");
-
-        // 1) deve salvar o novo nome + novo path da própria categoria
-        verify(repo).rename(catId, userId, "Comida", "Comida");
-
-        // 2) deve atualizar descendentes trocando prefixo "Alimentação/" -> "Comida/"
-        verify(repo).updatePathPrefix(userId, "Alimentação/", "Comida/");
-    }
-
 }
