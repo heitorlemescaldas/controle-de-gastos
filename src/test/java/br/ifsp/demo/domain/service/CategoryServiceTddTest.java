@@ -13,6 +13,9 @@ import static org.mockito.Mockito.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.util.List;
+import br.ifsp.demo.domain.model.CategoryNode;
+
 @Tag("UnitTest")
 @Tag("TDD")
 class CategoryServiceTddTest {
@@ -362,4 +365,25 @@ class CategoryServiceTddTest {
         // atualização em cascata dos descendentes: prefixo antigo -> novo prefixo
         verify(repo).updatePathPrefix(userId, "OldRoot/Mercado/", "Alimentação/Mercado/");
     }
+
+    @Test
+    @DisplayName("C13/US02 - Deve listar categorias em ordem pelo path completo")
+    void shouldListCategoriesOrderedByPath() {
+        var userId = "user-1";
+
+        var r1  = new CategoryNode("r1", userId, "Alimentação", null, "Alimentação");
+        var c11 = new CategoryNode("c11", userId, "Mercado", "r1", "Alimentação/Mercado");
+        var r2  = new CategoryNode("r2", userId, "Transporte", null, "Transporte");
+        var c21 = new CategoryNode("c21", userId, "Combustível", "r2", "Transporte/Combustível");
+
+        when(repo.findAllByUserOrdered(userId)).thenReturn(List.of(r1, c11, r2, c21));
+
+        var result = sut.listOrdered(userId);
+
+        assertThat(result).extracting(CategoryNode::path)
+                .containsExactly("Alimentação", "Alimentação/Mercado", "Transporte", "Transporte/Combustível");
+
+        verify(repo).findAllByUserOrdered(userId);
+    }
+
 }
