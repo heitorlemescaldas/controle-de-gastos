@@ -217,4 +217,26 @@ class CategoryServiceTddTest {
         verify(repo, never()).updatePathPrefix(anyString(), anyString(), anyString());
     }
 
+    // C09/US02: Renomear subcategoria atualiza o caminho completo #29
+    @Test
+    @DisplayName("C09/US02 - Deve renomear subcategoria e atualizar caminho completo e descendentes")
+    void shouldRenameChildAndUpdateFullPath() {
+        var userId  = "user-1";
+        var childId = "cat-child";
+
+        // path atual do filho
+        when(repo.findPathById(childId, userId)).thenReturn("Alimentação/Mercado");
+
+        // novo path NÃO conflita (C08 já cobre conflito)
+        when(repo.existsByUserAndPath(userId, "Alimentação/Supermercado")).thenReturn(false);
+
+        // ação
+        sut.rename(childId, userId, "  Supermercado ");
+
+        // verifica rename do próprio nó (nome trimado + path novo)
+        verify(repo).rename(childId, userId, "Supermercado", "Alimentação/Supermercado");
+
+        // verifica cascata nos descendentes: troca de prefixo
+        verify(repo).updatePathPrefix(userId, "Alimentação/Mercado/", "Alimentação/Supermercado/");
+    }
 }

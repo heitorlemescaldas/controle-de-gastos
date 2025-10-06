@@ -8,8 +8,6 @@ import org.junit.jupiter.api.*;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-import br.ifsp.demo.domain.port.ExpenseRepositoryPort;
-
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
