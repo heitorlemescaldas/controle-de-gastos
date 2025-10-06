@@ -13,6 +13,8 @@ import static org.mockito.Mockito.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import static org.mockito.Mockito.atLeastOnce;
+
 @Tag("UnitTest")
 @Tag("TDD")
 class CategoryServiceTddTest {
@@ -62,7 +64,9 @@ class CategoryServiceTddTest {
         // parent existe (sucesso)
         when(repo.existsByIdAndUser(parentId, userId)).thenReturn(true);
 
-        // save deve receber já trimadp e com parentId correto
+        when(repo.findPathById(parentId, userId)).thenReturn("Alimentação");
+
+        // save deve receber já TRIMADO e com parentId correto
         when(repo.save(any(Category.class))).thenAnswer(inv -> {
             var arg = (Category) inv.getArgument(0);
             assertThat(arg.name()).isEqualTo("Supermercado");
@@ -78,7 +82,7 @@ class CategoryServiceTddTest {
         assertThat(saved.parentId()).isEqualTo(parentId);
 
         // garante que o servico verificou a existencia do parent
-        verify(repo).existsByIdAndUser(parentId, userId);
+        verify(repo, atLeastOnce()).existsByIdAndUser(parentId, userId);
         verify(repo).save(any(Category.class));
     }
 
@@ -108,13 +112,15 @@ class CategoryServiceTddTest {
 
         // parent existe (happy path para parent)
         when(repo.existsByIdAndUser(parentId, userId)).thenReturn(true);
+    
+        when(repo.findPathById(parentId, userId)).thenReturn("Alimentação");
 
         // normalizado vira "mercado"
         when(repo.existsByUserAndParentAndNameNormalized(userId, parentId, "mercado")).thenReturn(true);
 
         assertThatThrownBy(() -> sut.create(input))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("categoria duplicada");
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("categoria duplicada");
 
         verify(repo, never()).save(any());
     }

@@ -5,6 +5,7 @@ import br.ifsp.demo.domain.port.CategoryRepositoryPort;
 import br.ifsp.demo.domain.port.ExpenseRepositoryPort;
 
 import java.util.regex.Pattern;
+import java.util.Arrays;
 
 public class CategoryService {
 
@@ -23,6 +24,16 @@ public class CategoryService {
         if (!NAME_PATTERN.matcher(trimmed).matches()) {
             throw new IllegalArgumentException("nome inválido: caracteres proibidos");
         }
+    }
+
+    // C10 - profundidade máxima do caminho (ex.: Raiz=1, Filho=2, Neto=3)
+    private static final int MAX_DEPTH = 3;
+
+    private static int depthOf(String path) {
+        if (path == null || path.isBlank()) return 0;
+        return (int) Arrays.stream(path.split("/"))
+                .filter(s -> s != null && !s.isBlank())
+                .count();
     }
 
     // construtor existente (continua para C01..C03)
@@ -55,6 +66,21 @@ public class CategoryService {
         if (repo.existsByUserAndParentAndNameNormalized(
                 normalized.userId(), normalized.parentId(), normalizedName)) {
             throw new IllegalArgumentException("categoria duplicada");
+        }
+
+        if (normalized.parentId() != null) {
+            boolean parentExists = repo.existsByIdAndUser(normalized.parentId(), normalized.userId());
+            if (!parentExists) throw new IllegalArgumentException("categoria pai inexistente");
+
+            // C10: calcular o caminho candidato e checar profundidade
+            String parentPath = repo.findPathById(normalized.parentId(), normalized.userId());
+            if (parentPath == null || parentPath.isBlank()) {
+                throw new IllegalStateException("caminho do parent inexistente");
+            }
+            String candidatePath = parentPath + "/" + normalized.name();
+            if (depthOf(candidatePath) > MAX_DEPTH) {
+                throw new IllegalArgumentException("profundidade máxima excedida");
+            }
         }
 
         return repo.save(normalized);
