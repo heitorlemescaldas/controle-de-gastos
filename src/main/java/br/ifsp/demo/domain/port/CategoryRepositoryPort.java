@@ -6,10 +6,15 @@ public interface CategoryRepositoryPort {
     boolean existsByIdAndUser(String categoryId, String userId);
     Category save(Category category);
 
-    // NOVOS para exclusão
+    // já existente (C03)
+    boolean existsByUserAndParentAndNameNormalized(String userId, String parentId, String normalizedName);
+
+    // já existentes (C05)
     boolean hasChildren(String categoryId, String userId);
     void delete(String categoryId, String userId);
 
-    // já adicionado no C03:
-    boolean existsByUserAndParentAndNameNormalized(String userId, String parentId, String normalizedName);
+    // novos para rename/cascata (C07)
+    String findPathById(String categoryId, String userId);
+    void rename(String categoryId, String userId, String newName, String newPath);
+    void updatePathPrefix(String userId, String oldPrefix, String newPrefix);
 }

@@ -57,4 +57,30 @@ public class CategoryService {
 
         repo.delete(categoryId, userId);
     }
+
+    public void rename(String categoryId, String userId, String newName) {
+        if (categoryId == null || categoryId.isBlank())
+            throw new IllegalArgumentException("categoryId obrigatório");
+        if (userId == null || userId.isBlank())
+            throw new IllegalArgumentException("userId obrigatório");
+        if (newName == null || newName.isBlank())
+            throw new IllegalArgumentException("nome obrigatório");
+
+        var trimmed = newName.trim();
+
+        // caminho atual da categoria (ex.: "Alimentação" ou "Alimentação/Mercado")
+        var oldPath = repo.findPathById(categoryId, userId);
+        if (oldPath == null || oldPath.isBlank())
+            throw new IllegalStateException("caminho atual inexistente");
+
+        // substitui o último segmento do path pelo novo nome
+        int slash = oldPath.lastIndexOf('/');
+        String newPath = (slash >= 0) ? oldPath.substring(0, slash + 1) + trimmed : trimmed;
+
+        // atualiza a própria categoria
+        repo.rename(categoryId, userId, trimmed, newPath);
+
+        // atualiza os descendentes trocando prefixo "oldPath/" -> "newPath/"
+        repo.updatePathPrefix(userId, oldPath + "/", newPath + "/");
+    }
 }
