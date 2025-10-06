@@ -288,4 +288,45 @@ class CategoryServiceTddTest {
         verify(repo, never()).updatePathPrefix(anyString(), anyString(), anyString());
     }
 
+    // C10/US02: Profundidade máxima de uma categoria excedida #30
+    @Test
+    @DisplayName("C10/US02 - create: deve rejeitar quando novo caminho excede profundidade máxima (ex.: 4)")
+    void shouldRejectCreateWhenExceedingMaxDepth() {
+        var userId   = "user-1";
+        var parentId = "cat-level3"; // parent já em nível 3 (ex.: A/B/C)
+        var input    = Category.child(userId, "Filho", parentId); // criaria nível 4
+
+        // parent existe
+        when(repo.existsByIdAndUser(parentId, userId)).thenReturn(true);
+        // caminho atual do parent (nível 3)
+        when(repo.findPathById(parentId, userId)).thenReturn("A/B/C");
+
+        assertThatThrownBy(() -> sut.create(input))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("profundidade máxima");
+
+        verify(repo, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("C10/US02 - create: deve permitir quando novo caminho atinge exatamente a profundidade máxima (ex.: 3)")
+    void shouldAllowCreateAtMaxDepth() {
+        var userId   = "user-1";
+        var parentId = "cat-level2"; // parent em nível 2 (ex.: A/B)
+        var input    = Category.child(userId, "Filho", parentId); // criaria nível 3 (permitido)
+
+        when(repo.existsByIdAndUser(parentId, userId)).thenReturn(true);
+        when(repo.findPathById(parentId, userId)).thenReturn("A/B");
+
+        when(repo.save(any(Category.class))).thenAnswer(inv -> {
+            var arg = (Category) inv.getArgument(0);
+            // novo caminho resultante seria A/B/Filho (nível 3) – ok
+            assertThat(arg.name()).isEqualTo("Filho");
+            return arg.withId("cat-new");
+        });
+
+        var saved = sut.create(input);
+        assertThat(saved.id()).isEqualTo("cat-new");
+        verify(repo).save(any(Category.class));
+    }
 }
