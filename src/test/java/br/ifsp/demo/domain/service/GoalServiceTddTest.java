@@ -149,4 +149,48 @@ class GoalServiceTddTest {
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("limite deve ser positivo");
     }
+
+    @Test
+    @DisplayName("C04/US04 - evaluateMonthly usa o path ATUAL após rename da categoria com meta")
+    void shouldEvaluateUsingNewPathAfterRootRename() {
+        var user  = "user-1";
+        var ym    = YearMonth.of(2025, 10);
+        var root  = "cat-food"; // categoria com meta
+
+        // meta existente (limite 300)
+        when(goalRepo.findByUserAndCategoryAndMonth(user, root, ym))
+            .thenReturn(java.util.Optional.of(Goal.monthly(user, root, ym, new BigDecimal("300.00"))));
+
+        // após rename, o path atual da raiz mudou de "Alimentação" para "Comida"
+        when(categoryRepo.findPathById(root, user)).thenReturn("Comida");
+
+        var catMarket     = "cat-market";
+        var catRestaurant = "cat-restaurant";
+        // filhos já com prefixo NOVO (efeito do rename)
+        when(categoryRepo.findPathById(catMarket, user)).thenReturn("Comida/Mercado");
+        when(categoryRepo.findPathById(catRestaurant, user)).thenReturn("Comida/Restaurante");
+
+        // despesas do mês (todas dentro da árvore renomeada)
+        var e1 = Expense.of(user, new BigDecimal("120.00"), ExpenseType.DEBIT,  "Compra mercado",
+                java.time.Instant.parse("2025-10-05T12:00:00Z"), catMarket);
+        var e2 = Expense.of(user, new BigDecimal("90.00"),  ExpenseType.DEBIT,  "Almoço",
+                java.time.Instant.parse("2025-10-08T13:00:00Z"), catRestaurant);
+
+        when(expenseRepo.findByUserAndPeriod(eq(user), any(), any()))
+            .thenReturn(java.util.List.of(e1, e2));
+
+        // AÇÃO
+        var ev = sut.evaluateMonthly(user, root, ym);
+
+        // ASSERT – avalia com o NOVO prefixo "Comida"
+        assertThat(ev.limit()).isEqualByComparingTo("300.00");
+        assertThat(ev.spent()).isEqualByComparingTo("210.00");
+        assertThat(ev.exceeded()).isFalse();
+        assertThat(ev.diff()).isEqualByComparingTo("0.00");
+
+        // garantias de chamadas
+        verify(goalRepo).findByUserAndCategoryAndMonth(user, root, ym);
+        verify(categoryRepo, atLeastOnce()).findPathById(anyString(), eq(user));
+        verify(expenseRepo).findByUserAndPeriod(eq(user), any(), any());
+    }
 }
