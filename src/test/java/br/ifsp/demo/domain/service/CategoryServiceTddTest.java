@@ -13,8 +13,6 @@ import static org.mockito.Mockito.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import static org.mockito.Mockito.atLeastOnce;
-
 @Tag("UnitTest")
 @Tag("TDD")
 class CategoryServiceTddTest {
@@ -334,5 +332,34 @@ class CategoryServiceTddTest {
         var saved = sut.create(input);
         assertThat(saved.id()).isEqualTo("cat-new");
         verify(repo).save(any(Category.class));
+    }
+
+    // C12/US02: Mover subcategoria para outra categoria raiz #31
+    @Test
+    @DisplayName("C12/US02 - Deve mover subcategoria para outra raiz e atualizar caminhos dos descendentes")
+    void shouldMoveChildToAnotherRootAndUpdateDescendants() {
+        var userId      = "user-1";
+        var childId     = "cat-child";
+        var newParentId = "cat-new-root";
+
+        // caminho atual do filho (nível 2): OldRoot/Mercado
+        when(repo.findPathById(childId, userId)).thenReturn("OldRoot/Mercado");
+
+        // novo parent existe e seu path é "Alimentação" (nível 1)
+        when(repo.existsByIdAndUser(newParentId, userId)).thenReturn(true);
+        when(repo.findPathById(newParentId, userId)).thenReturn("Alimentação");
+
+        // nome do filho é "Mercado" -> verificar duplicidade entre irmãos do novo parent
+        when(repo.existsByUserAndParentAndNameNormalized(userId, newParentId, "mercado"))
+                .thenReturn(false);
+
+        // ação
+        sut.move(childId, newParentId, userId);
+
+        // novo path do próprio nó: Alimentação/Mercado
+        verify(repo).move(childId, userId, newParentId, "Alimentação/Mercado");
+
+        // atualização em cascata dos descendentes: prefixo antigo -> novo prefixo
+        verify(repo).updatePathPrefix(userId, "OldRoot/Mercado/", "Alimentação/Mercado/");
     }
 }
