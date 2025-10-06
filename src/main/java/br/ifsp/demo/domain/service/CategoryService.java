@@ -68,19 +68,19 @@ public class CategoryService {
 
         var trimmed = newName.trim();
 
-        // caminho atual da categoria (ex.: "Alimentação" ou "Alimentação/Mercado")
         var oldPath = repo.findPathById(categoryId, userId);
         if (oldPath == null || oldPath.isBlank())
             throw new IllegalStateException("caminho atual inexistente");
 
-        // substitui o último segmento do path pelo novo nome
         int slash = oldPath.lastIndexOf('/');
         String newPath = (slash >= 0) ? oldPath.substring(0, slash + 1) + trimmed : trimmed;
 
-        // atualiza a própria categoria
-        repo.rename(categoryId, userId, trimmed, newPath);
+        // ✅ C08: se o novo path for diferente do atual e já existir, bloquear
+        if (!newPath.equals(oldPath) && repo.existsByUserAndPath(userId, newPath)) {
+            throw new IllegalArgumentException("caminho já existe");
+        }
 
-        // atualiza os descendentes trocando prefixo "oldPath/" -> "newPath/"
+        repo.rename(categoryId, userId, trimmed, newPath);
         repo.updatePathPrefix(userId, oldPath + "/", newPath + "/");
     }
 }
