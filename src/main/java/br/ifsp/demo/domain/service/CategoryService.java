@@ -127,4 +127,49 @@ public class CategoryService {
         repo.rename(categoryId, userId, trimmed, newPath);
         repo.updatePathPrefix(userId, oldPath + "/", newPath + "/");
     }
+
+    public void move(String categoryId, String newParentId, String userId) {
+        if (categoryId == null || categoryId.isBlank())
+            throw new IllegalArgumentException("categoryId obrigatório");
+        if (newParentId == null || newParentId.isBlank())
+            throw new IllegalArgumentException("newParentId obrigatório");
+        if (userId == null || userId.isBlank())
+            throw new IllegalArgumentException("userId obrigatório");
+
+        // path atual do nó a mover
+        var oldPath = repo.findPathById(categoryId, userId);
+        if (oldPath == null || oldPath.isBlank())
+            throw new IllegalStateException("caminho atual inexistente");
+
+        // nome atual = último segmento do path
+        int slash = oldPath.lastIndexOf('/');
+        String name = (slash >= 0) ? oldPath.substring(slash + 1) : oldPath;
+
+        // novo parent deve existir
+        if (!repo.existsByIdAndUser(newParentId, userId))
+            throw new IllegalArgumentException("categoria pai inexistente");
+
+        var newParentPath = repo.findPathById(newParentId, userId);
+        if (newParentPath == null || newParentPath.isBlank())
+            throw new IllegalStateException("caminho do parent inexistente");
+
+        // impedir ciclo (não mover para dentro do próprio subárvore)
+        if ((newParentPath + "/").startsWith(oldPath + "/"))
+            throw new IllegalArgumentException("movimento inválido: criaria ciclo");
+
+        // checar duplicidade no destino (irmãos)
+        var normalizedName = name.toLowerCase();
+        if (repo.existsByUserAndParentAndNameNormalized(userId, newParentId, normalizedName))
+            throw new IllegalArgumentException("categoria duplicada");
+
+        // checar profundidade máxima (C10)
+        String newPath = newParentPath + "/" + name;
+        if (depthOf(newPath) > MAX_DEPTH)
+            throw new IllegalArgumentException("profundidade máxima excedida");
+
+        // efetiva a troca do parent + path do nó e atualiza descendentes
+        repo.move(categoryId, userId, newParentId, newPath);
+        repo.updatePathPrefix(userId, oldPath + "/", newPath + "/");
+    }
+
 }

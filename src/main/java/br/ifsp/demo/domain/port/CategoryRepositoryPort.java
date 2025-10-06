@@ -10,11 +10,11 @@ public interface CategoryRepositoryPort {
     boolean hasChildren(String categoryId, String userId);
     void delete(String categoryId, String userId);
 
-    // já usado no C07
     String findPathById(String categoryId, String userId);
     void rename(String categoryId, String userId, String newName, String newPath);
     void updatePathPrefix(String userId, String oldPrefix, String newPrefix);
-
-    // NOVO para C08
     boolean existsByUserAndPath(String userId, String path);
+
+    // NOVO: mover nó para outro parent, definindo o novo path
+    void move(String categoryId, String userId, String newParentId, String newPath);
 }
