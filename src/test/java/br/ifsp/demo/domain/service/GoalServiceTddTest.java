@@ -15,6 +15,9 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+
 import br.ifsp.demo.domain.model.Expense;
 import br.ifsp.demo.domain.model.ExpenseType;
 import br.ifsp.demo.domain.model.GoalEvaluation;
@@ -122,5 +125,28 @@ class GoalServiceTddTest {
         verify(goalRepo).findByUserAndCategoryAndMonth(user, root, ym);
         verify(expenseRepo).findByUserAndPeriod(eq(user), any(), any());
         verify(categoryRepo, atLeastOnce()).findPathById(anyString(), eq(user));
+    }
+
+    @Test
+    @DisplayName("C03/US04 - setMonthlyGoal: deve rejeitar limite nulo")
+    void shouldRejectNullLimitOnSetMonthlyGoal() {
+        var user  = "user-1";
+        var catId = "cat-food";
+
+        assertThatThrownBy(() -> sut.setMonthlyGoal(user, catId, YearMonth.of(2025, 10), null))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("limite deve ser positivo");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = { "0.00", "-10.00" })
+    @DisplayName("C03/US04 - setMonthlyGoal: deve rejeitar limite zero/negativo")
+    void shouldRejectNonPositiveLimitOnSetMonthlyGoal(String val) {
+        var user  = "user-1";
+        var catId = "cat-food";
+
+        assertThatThrownBy(() -> sut.setMonthlyGoal(user, catId, YearMonth.of(2025, 10), new BigDecimal(val)))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("limite deve ser positivo");
     }
 }
