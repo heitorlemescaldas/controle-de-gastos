@@ -2,6 +2,7 @@ package br.ifsp.demo.domain.service;
 
 import br.ifsp.demo.domain.model.Goal;
 import br.ifsp.demo.domain.port.CategoryRepositoryPort;
+import br.ifsp.demo.domain.port.ExpenseRepositoryPort;
 import br.ifsp.demo.domain.port.GoalRepositoryPort;
 import org.junit.jupiter.api.*;
 
@@ -20,19 +21,23 @@ import br.ifsp.demo.domain.model.GoalEvaluation;
 import java.time.Instant;
 import java.util.List;
 
+import java.util.Optional;
+
 @Tag("UnitTest")
 @Tag("TDD")
 class GoalServiceTddTest {
 
     GoalRepositoryPort goalRepo;
     CategoryRepositoryPort categoryRepo;
+    ExpenseRepositoryPort expenseRepo;
     GoalService sut;
 
     @BeforeEach
     void setup() {
         goalRepo = mock(GoalRepositoryPort.class);
         categoryRepo = mock(CategoryRepositoryPort.class);
-        sut = new GoalService(goalRepo, categoryRepo);
+        expenseRepo = mock(ExpenseRepositoryPort.class);  // novo
+        sut = new GoalService(goalRepo, categoryRepo, expenseRepo); // use construtor completo
     }
 
     // C01/US04: Definir uma meta de gasto para uma categoria principal #10
@@ -79,7 +84,7 @@ class GoalServiceTddTest {
 
         // meta existente (limite 200)
         when(goalRepo.findByUserAndCategoryAndMonth(user, root, ym))
-                .thenReturn(java.util.Optional.of(Goal.monthly(user, root, ym, new BigDecimal("200.00"))));
+            .thenReturn(Optional.of(Goal.monthly(user, root, ym, new BigDecimal("200.00"))));
 
         // path da raiz e das subcategorias
         when(categoryRepo.findPathById(root, user)).thenReturn("Alimentação");
