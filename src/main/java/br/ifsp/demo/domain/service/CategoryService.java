@@ -4,10 +4,26 @@ import br.ifsp.demo.domain.model.Category;
 import br.ifsp.demo.domain.port.CategoryRepositoryPort;
 import br.ifsp.demo.domain.port.ExpenseRepositoryPort;
 
+import java.util.regex.Pattern;
+
 public class CategoryService {
 
     private final CategoryRepositoryPort repo;
     private final ExpenseRepositoryPort expenseRepo; // pode ser null para cenários que não usam
+
+    // C11 - validação de nome
+    private static final int MAX_NAME = 50;
+    // Letras (Unicode), dígitos, espaço, '_' e '-'
+    private static final Pattern NAME_PATTERN = Pattern.compile("^[\\p{L}\\p{N} _-]+$");
+
+    private static void ensureValidName(String trimmed) {
+        if (trimmed.length() > MAX_NAME) {
+            throw new IllegalArgumentException("nome inválido: comprimento máximo é 50");
+        }
+        if (!NAME_PATTERN.matcher(trimmed).matches()) {
+            throw new IllegalArgumentException("nome inválido: caracteres proibidos");
+        }
+    }
 
     // construtor existente (continua para C01..C03)
     public CategoryService(CategoryRepositoryPort repo) {
@@ -26,9 +42,10 @@ public class CategoryService {
         if (category.name() == null || category.name().isBlank())
             throw new IllegalArgumentException("nome obrigatório");
 
-        var trimmedName    = category.name().trim();
+        var trimmedName = category.name().trim();
+        ensureValidName(trimmedName); // C11: nome válido
         var normalizedName = trimmedName.toLowerCase();
-        var normalized     = category.withName(trimmedName);
+        var normalized = category.withName(trimmedName);
 
         if (normalized.parentId() != null) {
             boolean parentExists = repo.existsByIdAndUser(normalized.parentId(), normalized.userId());
@@ -67,6 +84,7 @@ public class CategoryService {
             throw new IllegalArgumentException("nome obrigatório");
 
         var trimmed = newName.trim();
+        ensureValidName(trimmed); // C11: nome válido
 
         var oldPath = repo.findPathById(categoryId, userId);
         if (oldPath == null || oldPath.isBlank())
@@ -75,7 +93,7 @@ public class CategoryService {
         int slash = oldPath.lastIndexOf('/');
         String newPath = (slash >= 0) ? oldPath.substring(0, slash + 1) + trimmed : trimmed;
 
-        // ✅ C08: se o novo path for diferente do atual e já existir, bloquear
+        // C08: se o novo path for diferente do atual e já existir, bloquear
         if (!newPath.equals(oldPath) && repo.existsByUserAndPath(userId, newPath)) {
             throw new IllegalArgumentException("caminho já existe");
         }
