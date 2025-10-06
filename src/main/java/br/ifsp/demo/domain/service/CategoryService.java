@@ -1,11 +1,15 @@
 package br.ifsp.demo.domain.service;
 
 import br.ifsp.demo.domain.model.Category;
+import br.ifsp.demo.domain.model.CategoryNode;
 import br.ifsp.demo.domain.port.CategoryRepositoryPort;
 import br.ifsp.demo.domain.port.ExpenseRepositoryPort;
 
 import java.util.regex.Pattern;
 import java.util.Arrays;
+
+import java.util.List;
+import br.ifsp.demo.domain.model.CategoryNode;
 
 public class CategoryService {
 
@@ -172,4 +176,9 @@ public class CategoryService {
         repo.updatePathPrefix(userId, oldPath + "/", newPath + "/");
     }
 
+    public List<CategoryNode> listOrdered(String userId) {
+        if (userId == null || userId.isBlank())
+            throw new IllegalArgumentException("userId obrigatório");
+        return repo.findAllByUserOrdered(userId);
+    }
 }
