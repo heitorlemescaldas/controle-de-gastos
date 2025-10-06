@@ -10,6 +10,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+
 @Tag("UnitTest")
 @Tag("TDD")
 class CategoryServiceTddTest {
@@ -239,4 +242,50 @@ class CategoryServiceTddTest {
         // verifica cascata nos descendentes: troca de prefixo
         verify(repo).updatePathPrefix(userId, "Alimentação/Mercado/", "Alimentação/Supermercado/");
     }
+
+    // nomes com caracteres proibidos ou inválidos (após trim)
+    @ParameterizedTest
+    @ValueSource(strings = { "Alim/entação", "Comida*", "Mercado|", ":", "\\", "🍕" })
+    @DisplayName("C11/US02 - create: deve rejeitar nome inválido (caracteres proibidos)")
+    void shouldRejectInvalidNameOnCreate(String invalid) {
+        var input = Category.root("user-1", invalid);
+
+        assertThatThrownBy(() -> sut.create(input))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("nome inválido");
+
+        verify(repo, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("C11/US02 - create: deve rejeitar nome muito longo (>50)")
+    void shouldRejectTooLongNameOnCreate() {
+        var longName = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"; // 51 'a'
+        var input = Category.root("user-1", longName);
+
+        assertThatThrownBy(() -> sut.create(input))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("nome inválido");
+
+        verify(repo, never()).save(any());
+    }
+
+    // rename com nomes inválidos
+    @ParameterizedTest
+    @ValueSource(strings = { "Alim/entação", "Comida*", "Mercado|", ":", "\\", "🍕" })
+    @DisplayName("C11/US02 - rename: deve rejeitar novo nome inválido (caracteres proibidos)")
+    void shouldRejectInvalidNameOnRename(String invalid) {
+        var userId = "user-1";
+        var catId  = "cat-x";
+
+        when(repo.findPathById(catId, userId)).thenReturn("Alimentação"); // path atual
+
+        assertThatThrownBy(() -> sut.rename(catId, userId, invalid))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("nome inválido");
+
+        verify(repo, never()).rename(anyString(), anyString(), anyString(), anyString());
+        verify(repo, never()).updatePathPrefix(anyString(), anyString(), anyString());
+    }
+
 }
