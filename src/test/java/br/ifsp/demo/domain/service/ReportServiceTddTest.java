@@ -7,13 +7,14 @@ import br.ifsp.demo.domain.model.ReportItem;
 import br.ifsp.demo.domain.port.ExpenseRepositoryPort;
 import br.ifsp.demo.domain.port.CategoryRepositoryPort;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.Tag;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @Tag("UnitTest")
@@ -78,4 +79,71 @@ class ReportServiceTddTest {
         verify(expenseRepo).findByUserAndPeriod(user, start, end);
         verify(categoryRepo, atLeastOnce()).findPathById(anyString(), eq(user));
     }
+
+    @Test
+    @DisplayName("C02/US03 - Deve gerar relatório filtrando árvore da categoria (inclui subcategorias) e saldo negativo")
+    void shouldGenerateReportForCategoryTreeWithNegativeBalance() {
+        var user  = "user-1";
+        var start = Instant.parse("2025-10-01T00:00:00Z");
+        var end   = Instant.parse("2025-10-31T23:59:59Z");
+
+        // ids
+        var catFood       = "cat-food";        // raiz Alimentação
+        var catMarket     = "cat-market";      // Alimentação/Mercado
+        var catRestaurant = "cat-restaurant";  // Alimentação/Restaurante
+        var catTransport  = "cat-transport";   // Transporte
+
+        // caminho da raiz que queremos filtrar
+        when(categoryRepo.findPathById(catFood, user)).thenReturn("Alimentação");
+
+        // paths das categorias para cada despesa
+        when(categoryRepo.findPathById(catMarket, user)).thenReturn("Alimentação/Mercado");
+        when(categoryRepo.findPathById(catRestaurant, user)).thenReturn("Alimentação/Restaurante");
+        when(categoryRepo.findPathById(catTransport, user)).thenReturn("Transporte");
+
+        // despesas no período (algumas fora da árvore devem ser ignoradas)
+        var e1 = Expense.of(user, new BigDecimal("100.00"), ExpenseType.DEBIT,  "Compra mercado",
+                Instant.parse("2025-10-05T12:00:00Z"), catMarket);
+        var e2 = Expense.of(user, new BigDecimal("50.00"),  ExpenseType.DEBIT,  "Almoço",
+                Instant.parse("2025-10-08T13:00:00Z"), catRestaurant);
+        var e3 = Expense.of(user, new BigDecimal("20.00"),  ExpenseType.CREDIT, "Cashback",
+                Instant.parse("2025-10-10T10:00:00Z"), catFood);        // crédito na raiz
+        var e4 = Expense.of(user, new BigDecimal("30.00"),  ExpenseType.DEBIT,  "Ônibus",
+                Instant.parse("2025-10-12T08:00:00Z"), catTransport);   // fora da árvore -> ignorar
+        var e5 = Expense.of(user, new BigDecimal("10.00"),  ExpenseType.CREDIT, "Bônus",
+                Instant.parse("2025-10-15T09:00:00Z"), null);           // sem categoria -> ignorar
+
+        when(expenseRepo.findByUserAndPeriod(user, start, end)).thenReturn(List.of(e1, e2, e3, e4, e5));
+
+        // AÇÃO
+        Report r = sut.generateForCategoryTree(user, start, end, catFood);
+
+        // TOTAIS apenas da árvore "Alimentação"
+        assertThat(r.totalDebit()).isEqualByComparingTo("150.00");
+        assertThat(r.totalCredit()).isEqualByComparingTo("20.00");
+        assertThat(r.balance()).isEqualByComparingTo("-130.00");
+        assertThat(r.balance().signum()).isLessThan(0); // saldo negativo
+
+        // ITENS ordenados por path dentro da árvore
+        assertThat(r.items()).extracting(ReportItem::categoryPath).containsExactly(
+                "Alimentação",
+                "Alimentação/Mercado",
+                "Alimentação/Restaurante"
+        );
+        assertThat(r.items()).extracting(ReportItem::debit).containsExactly(
+                BigDecimal.ZERO,              // raiz teve só crédito
+                new BigDecimal("100.00"),
+                new BigDecimal("50.00")
+        );
+        assertThat(r.items()).extracting(ReportItem::credit).containsExactly(
+                new BigDecimal("20.00"),
+                BigDecimal.ZERO,
+                BigDecimal.ZERO
+        );
+
+        // verificações
+        verify(expenseRepo).findByUserAndPeriod(user, start, end);
+        verify(categoryRepo, atLeastOnce()).findPathById(anyString(), eq(user));
+    }
+
 }
