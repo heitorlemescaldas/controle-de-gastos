@@ -1,8 +1,10 @@
-package br.ifsp.demo.domain.service;
+package br.ifsp.demo.functional;
 
 import br.ifsp.demo.domain.model.Category;
 import br.ifsp.demo.domain.port.CategoryRepositoryPort;
 import br.ifsp.demo.domain.port.ExpenseRepositoryPort;
+import br.ifsp.demo.domain.service.CategoryService;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
