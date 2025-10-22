@@ -44,4 +44,63 @@ class CategoryServiceStructuralTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("categoryId obrigatório");
     }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @DisplayName("Structural/rename - Deve rejeitar argumentos nulos ou vazios")
+    void renameShouldRejectInvalidArguments(String invalidInput) {
+        assertThatThrownBy(() -> sut.rename(invalidInput, "user-1", "Novo Nome"))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> sut.rename("cat-1", invalidInput, "Novo Nome"))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> sut.rename("cat-1", "user-1", invalidInput))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    @DisplayName("Structural/rename - Deve falhar se o caminho antigo for nulo")
+    void renameShouldFailIfOldPathIsMissing() {
+        var userId = "user-1";
+        var catId = "cat-1";
+
+        when(repo.findPathById(catId, userId)).thenReturn(null);
+
+        assertThatThrownBy(() -> sut.rename(catId, userId, "Novo Nome"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("caminho atual inexistente");
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @DisplayName("Structural/move - Deve rejeitar argumentos nulos ou vazios")
+    void moveShouldRejectInvalidArguments(String invalidInput) {
+        assertThatThrownBy(() -> sut.move(invalidInput, "p2", "u1"))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> sut.move("c1", invalidInput, "u1"))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> sut.move("c1", "p2", invalidInput))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    @DisplayName("Structural/move - Deve falhar se o caminho do nó a mover for nulo")
+    void moveShouldFailIfOldPathIsMissing() {
+        when(repo.findPathById("c1", "u1")).thenReturn(null);
+        assertThatThrownBy(() -> sut.move("c1", "p2", "u1"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("caminho atual inexistente");
+    }
+
+    @Test
+    @DisplayName("Structural/move - Deve falhar se o caminho do novo pai for nulo")
+    void moveShouldFailIfNewParentPathIsMissing() {
+        when(repo.findPathById("c1", "u1")).thenReturn("Old/Path");
+        when(repo.existsByIdAndUser("p2", "u1")).thenReturn(true);
+        when(repo.findPathById("p2", "u1")).thenReturn(null); // Inconsistência
+
+        assertThatThrownBy(() -> sut.move("c1", "p2", "u1"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("caminho do parent inexistente");
+    }
+
 }
