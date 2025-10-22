@@ -103,4 +103,62 @@ class CategoryServiceStructuralTest {
                 .hasMessageContaining("caminho do parent inexistente");
     }
 
+    @Test
+    @DisplayName("Structural/move - Deve rejeitar movimento que cria ciclo")
+    void moveShouldRejectCyclicalMove() {
+        when(repo.findPathById("c1", "u1")).thenReturn("A"); // Mover 'A'
+        when(repo.existsByIdAndUser("p2", "u1")).thenReturn(true);
+        when(repo.findPathById("p2", "u1")).thenReturn("A/B"); // Para dentro de 'A/B'
+
+        assertThatThrownBy(() -> sut.move("c1", "p2", "u1"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("criaria ciclo");
+    }
+
+    @Test
+    @DisplayName("Structural/move - Deve rejeitar se nome duplicado no destino")
+    void moveShouldRejectDuplicateNameAtDestination() {
+        when(repo.findPathById("c1", "u1")).thenReturn("Old/Filho");
+        when(repo.existsByIdAndUser("p2", "u1")).thenReturn(true);
+        when(repo.findPathById("p2", "u1")).thenReturn("NewRoot");
+        when(repo.existsByUserAndParentAndNameNormalized("u1", "p2", "filho")).thenReturn(true);
+
+        assertThatThrownBy(() -> sut.move("c1", "p2", "u1"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("categoria duplicada");
+    }
+
+    @Test
+    @DisplayName("Structural/move - Deve rejeitar se exceder profundidade máxima")
+    void moveShouldRejectWhenExceedingMaxDepth() {
+        when(repo.findPathById("c1", "u1")).thenReturn("Old/Filho");
+        when(repo.existsByIdAndUser("p2", "u1")).thenReturn(true);
+        when(repo.findPathById("p2", "u1")).thenReturn("A/B/C");
+
+        assertThatThrownBy(() -> sut.move("c1", "p2", "u1"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("profundidade máxima excedida");
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @DisplayName("Structural/listOrdered - Deve rejeitar userId nulo ou vazio")
+    void listOrderedShouldRejectInvalidUserId(String invalidId) {
+        assertThatThrownBy(() -> sut.listOrdered(invalidId))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("userId obrigatório");
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @DisplayName("Structural/create - Deve rejeitar categoria com nome nulo ou vazio")
+    void createShouldRejectNullOrBlankName(String invalidName) {
+        var category = br.ifsp.demo.domain.model.Category.root("user-1", invalidName);
+
+        assertThatThrownBy(() -> sut.create(category))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("nome obrigatório");
+
+        verify(repo, never()).save(any());
+    }
 }
