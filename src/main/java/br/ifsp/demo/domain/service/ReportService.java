@@ -37,7 +37,11 @@ public class ReportService {
             String path = "Sem categoria";
             if (e.categoryId() != null) {
                 String p = categoryRepo.findPathById(e.categoryId(), e.userId());
-                if (p != null && !p.isBlank()) path = p;
+                if (p != null && !p.isBlank()) {
+                    path = p;
+                } else {
+                    continue;
+                }
             }
             ReportItem current = map.getOrDefault(path, new ReportItem(path, BigDecimal.ZERO, BigDecimal.ZERO));
             if (e.type() == ExpenseType.DEBIT) {
