@@ -65,4 +65,19 @@ class GoalServiceStructuralTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("categoria raiz inexistente");
     }
+
+    @Test
+    @DisplayName("Structural/evaluateMonthly - Deve falhar se a meta para o mês não for encontrada")
+    void evaluateMonthlyShouldFailIfGoalIsNotFound() {
+        // Given
+        var user = "user-1";
+        var rootId = "cat-root";
+        var ym = YearMonth.of(2025, 10);
+
+        when(goalRepo.findByUserAndCategoryAndMonth(user, rootId, ym))
+                .thenReturn(Optional.empty());
+        assertThatThrownBy(() -> sut.evaluateMonthly(user, rootId, ym))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("meta inexistente");
+    }
 }
