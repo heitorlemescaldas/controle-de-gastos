@@ -1,0 +1,88 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=windows-1252"> 
+  <title>Coverage Report > ExpenseJpaRepository</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">br.ifsp.demo.infra.persistence.repo</a>
+</div>
+
+<h1>Coverage Summary for Class: ExpenseJpaRepository (br.ifsp.demo.infra.persistence.repo)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+</tr>
+<tr>
+  <td class="name">ExpenseJpaRepository</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package br.ifsp.demo.infra.persistence.repo;
+&nbsp;
+&nbsp;import br.ifsp.demo.infra.persistence.entity.ExpenseEntity;
+&nbsp;import org.springframework.data.jpa.repository.*;
+&nbsp;import org.springframework.data.repository.query.Param;
+&nbsp;import org.springframework.stereotype.Repository;
+&nbsp;import java.time.Instant;
+&nbsp;import java.util.List;
+&nbsp;
+&nbsp;@Repository
+&nbsp;public interface ExpenseJpaRepository extends JpaRepository&lt;ExpenseEntity, String&gt; {
+&nbsp;
+&nbsp;    @Query(&quot;select (count(e)&gt;0) from ExpenseEntity e where e.userId=:userId and e.categoryId=:categoryId&quot;)
+&nbsp;    boolean existsByUserAndCategory(@Param(&quot;userId&quot;) String userId, @Param(&quot;categoryId&quot;) String categoryId);
+&nbsp;
+&nbsp;    @Query(&quot;select e from ExpenseEntity e where e.userId=:userId and e.timestamp between :start and :end&quot;)
+&nbsp;    List&lt;ExpenseEntity&gt; findByUserAndPeriod(@Param(&quot;userId&quot;) String userId,
+&nbsp;                                            @Param(&quot;start&quot;) Instant start,
+&nbsp;                                            @Param(&quot;end&quot;) Instant end);
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2025-10-23 10:42</div>
+</div>
+</body>
+</html>

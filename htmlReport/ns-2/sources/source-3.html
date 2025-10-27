@@ -1,0 +1,161 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=windows-1252"> 
+  <title>Coverage Report > GoalController</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">br.ifsp.demo.controller</a>
+</div>
+
+<h1>Coverage Summary for Class: GoalController (br.ifsp.demo.controller)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">GoalController</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/3)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">GoalController$SetGoalRequest</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/4)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package br.ifsp.demo.controller;
+&nbsp;
+&nbsp;import br.ifsp.demo.domain.model.Goal;
+&nbsp;import br.ifsp.demo.domain.model.GoalEvaluation;
+&nbsp;import br.ifsp.demo.domain.service.GoalService;
+&nbsp;import org.springframework.http.ResponseEntity;
+&nbsp;import org.springframework.web.bind.annotation.*;
+&nbsp;import java.math.BigDecimal;
+&nbsp;import java.time.YearMonth;
+&nbsp;
+&nbsp;@RestController
+&nbsp;@RequestMapping(&quot;/api/v1/goals&quot;)
+&nbsp;public class GoalController {
+&nbsp;
+&nbsp;    private final GoalService service;
+<b class="nc">&nbsp;    public GoalController(GoalService service){ this.service = service; }</b>
+&nbsp;
+&nbsp;    @PostMapping
+&nbsp;    public ResponseEntity&lt;Goal&gt; setMonthly(@RequestHeader(&quot;X-User&quot;) String userId, @RequestBody SetGoalRequest req){
+<b class="nc">&nbsp;        return ResponseEntity.ok(service.setMonthlyGoal(userId, req.rootCategoryId(), YearMonth.parse(req.month()), new BigDecimal(req.limit())));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @GetMapping(&quot;/evaluate&quot;)
+&nbsp;    public ResponseEntity&lt;GoalEvaluation&gt; evaluate(@RequestHeader(&quot;X-User&quot;) String userId,
+&nbsp;                                                   @RequestParam String rootCategoryId,
+&nbsp;                                                   @RequestParam String month){
+<b class="nc">&nbsp;        return ResponseEntity.ok(service.evaluateMonthly(userId, rootCategoryId, YearMonth.parse(month)));</b>
+&nbsp;    }
+&nbsp;
+<b class="nc">&nbsp;    public record SetGoalRequest(String rootCategoryId, String month, String limit){}</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2025-10-23 10:42</div>
+</div>
+</body>
+</html>

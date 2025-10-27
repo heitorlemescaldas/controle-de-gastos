@@ -1,0 +1,213 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=windows-1252"> 
+  <title>Coverage Report > ReportService</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">br.ifsp.demo.domain.service</a>
+</div>
+
+<h1>Coverage Summary for Class: ReportService (br.ifsp.demo.domain.service)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">ReportService</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (59/59)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package br.ifsp.demo.domain.service;
+&nbsp;
+&nbsp;import br.ifsp.demo.domain.model.*;
+&nbsp;import br.ifsp.demo.domain.port.ExpenseRepositoryPort;
+&nbsp;import br.ifsp.demo.domain.port.CategoryRepositoryPort;
+&nbsp;
+&nbsp;import java.math.BigDecimal;
+&nbsp;import java.time.Instant;
+&nbsp;import java.util.*;
+&nbsp;
+&nbsp;import org.springframework.stereotype.Service;
+&nbsp;
+&nbsp;@Service
+&nbsp;public class ReportService {
+&nbsp;
+&nbsp;    private final ExpenseRepositoryPort expenseRepo;
+&nbsp;    private final CategoryRepositoryPort categoryRepo;
+&nbsp;
+<b class="fc">&nbsp;    public ReportService(ExpenseRepositoryPort expenseRepo, CategoryRepositoryPort categoryRepo) {</b>
+<b class="fc">&nbsp;        this.expenseRepo = expenseRepo;</b>
+<b class="fc">&nbsp;        this.categoryRepo = categoryRepo;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    public Report generate(String userId, Instant start, Instant end) {
+<b class="fc">&nbsp;        if (userId == null || userId.isBlank())</b>
+<b class="fc">&nbsp;            throw new IllegalArgumentException(&quot;userId obrigatório&quot;);</b>
+<b class="fc">&nbsp;        if (start == null || end == null || start.isAfter(end))</b>
+<b class="fc">&nbsp;            throw new IllegalArgumentException(&quot;período inválido&quot;);</b>
+&nbsp;
+<b class="fc">&nbsp;        List&lt;Expense&gt; txs = expenseRepo.findByUserAndPeriod(userId, start, end);</b>
+&nbsp;
+<b class="fc">&nbsp;        Map&lt;String, ReportItem&gt; map = new HashMap&lt;&gt;();</b>
+<b class="fc">&nbsp;        BigDecimal totalDebit = BigDecimal.ZERO;</b>
+<b class="fc">&nbsp;        BigDecimal totalCredit = BigDecimal.ZERO;</b>
+&nbsp;
+<b class="fc">&nbsp;        for (Expense e : txs) {</b>
+<b class="fc">&nbsp;            String path = &quot;Sem categoria&quot;;</b>
+<b class="fc">&nbsp;            if (e.categoryId() != null) {</b>
+<b class="fc">&nbsp;                String p = categoryRepo.findPathById(e.categoryId(), e.userId());</b>
+<b class="fc">&nbsp;                if (p != null &amp;&amp; !p.isBlank()) {</b>
+<b class="fc">&nbsp;                    path = p;</b>
+&nbsp;                } else {
+&nbsp;                    // CORREÇÃO: Se a categoria ID existe mas o path é desconhecido, ignore a despesa.
+&nbsp;                    continue;
+&nbsp;                }
+&nbsp;            }
+<b class="fc">&nbsp;            ReportItem current = map.getOrDefault(path, new ReportItem(path, BigDecimal.ZERO, BigDecimal.ZERO));</b>
+<b class="fc">&nbsp;            if (e.type() == ExpenseType.DEBIT) {</b>
+<b class="fc">&nbsp;                current = current.addDebit(e.amount());</b>
+<b class="fc">&nbsp;                totalDebit = totalDebit.add(e.amount());</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                current = current.addCredit(e.amount());</b>
+<b class="fc">&nbsp;                totalCredit = totalCredit.add(e.amount());</b>
+&nbsp;            }
+<b class="fc">&nbsp;            map.put(path, current);</b>
+<b class="fc">&nbsp;        }</b>
+&nbsp;
+<b class="fc">&nbsp;        List&lt;ReportItem&gt; items = new ArrayList&lt;&gt;(map.values());</b>
+<b class="fc">&nbsp;        Collections.sort(items); // ordena por path</b>
+&nbsp;
+<b class="fc">&nbsp;        BigDecimal balance = totalCredit.subtract(totalDebit);</b>
+&nbsp;
+<b class="fc">&nbsp;        return new Report(userId, start, end, totalDebit, totalCredit, balance, items);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    public Report generateForCategoryTree(String userId, Instant start, Instant end, String rootCategoryId) {
+<b class="fc">&nbsp;        if (userId == null || userId.isBlank())</b>
+<b class="fc">&nbsp;            throw new IllegalArgumentException(&quot;userId obrigatório&quot;);</b>
+<b class="fc">&nbsp;        if (rootCategoryId == null || rootCategoryId.isBlank())</b>
+<b class="fc">&nbsp;            throw new IllegalArgumentException(&quot;rootCategoryId obrigatório&quot;);</b>
+<b class="fc">&nbsp;        if (start == null || end == null || start.isAfter(end))</b>
+<b class="fc">&nbsp;            throw new IllegalArgumentException(&quot;período inválido&quot;);</b>
+&nbsp;
+<b class="fc">&nbsp;        String rootPath = categoryRepo.findPathById(rootCategoryId, userId);</b>
+<b class="fc">&nbsp;        if (rootPath == null || rootPath.isBlank())</b>
+<b class="fc">&nbsp;            throw new IllegalArgumentException(&quot;categoria raiz inexistente&quot;);</b>
+&nbsp;
+<b class="fc">&nbsp;        List&lt;Expense&gt; txs = expenseRepo.findByUserAndPeriod(userId, start, end);</b>
+&nbsp;
+<b class="fc">&nbsp;        Map&lt;String, ReportItem&gt; map = new HashMap&lt;&gt;();</b>
+<b class="fc">&nbsp;        BigDecimal totalDebit = BigDecimal.ZERO;</b>
+<b class="fc">&nbsp;        BigDecimal totalCredit = BigDecimal.ZERO;</b>
+&nbsp;
+<b class="fc">&nbsp;        for (Expense e : txs) {</b>
+<b class="fc">&nbsp;            if (e.categoryId() == null) continue; // fora da árvore</b>
+<b class="fc">&nbsp;            String path = categoryRepo.findPathById(e.categoryId(), e.userId());</b>
+<b class="fc">&nbsp;            if (path == null || path.isBlank()) continue;</b>
+&nbsp;
+&nbsp;            // filtra por árvore: path == rootPath OU começa com rootPath + &quot;/&quot;
+<b class="fc">&nbsp;            if (!(path.equals(rootPath) || path.startsWith(rootPath + &quot;/&quot;))) continue;</b>
+&nbsp;
+<b class="fc">&nbsp;            ReportItem current = map.getOrDefault(path, new ReportItem(path, BigDecimal.ZERO, BigDecimal.ZERO));</b>
+<b class="fc">&nbsp;            if (e.type() == ExpenseType.DEBIT) {</b>
+<b class="fc">&nbsp;                current = current.addDebit(e.amount());</b>
+<b class="fc">&nbsp;                totalDebit = totalDebit.add(e.amount());</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                current = current.addCredit(e.amount());</b>
+<b class="fc">&nbsp;                totalCredit = totalCredit.add(e.amount());</b>
+&nbsp;            }
+<b class="fc">&nbsp;            map.put(path, current);</b>
+<b class="fc">&nbsp;        }</b>
+&nbsp;
+<b class="fc">&nbsp;        List&lt;ReportItem&gt; items = new ArrayList&lt;&gt;(map.values());</b>
+<b class="fc">&nbsp;        Collections.sort(items);</b>
+&nbsp;
+<b class="fc">&nbsp;        BigDecimal balance = totalCredit.subtract(totalDebit);</b>
+<b class="fc">&nbsp;        return new Report(userId, start, end, totalDebit, totalCredit, balance, items);</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2025-10-23 10:42</div>
+</div>
+</body>
+</html>

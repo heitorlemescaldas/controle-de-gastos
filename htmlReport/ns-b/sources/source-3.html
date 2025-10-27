@@ -1,0 +1,117 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=windows-1252"> 
+  <title>Coverage Report > CategoryJpaRepository</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">br.ifsp.demo.infra.persistence.repo</a>
+</div>
+
+<h1>Coverage Summary for Class: CategoryJpaRepository (br.ifsp.demo.infra.persistence.repo)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+</tr>
+<tr>
+  <td class="name">CategoryJpaRepository</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package br.ifsp.demo.infra.persistence.repo;
+&nbsp;
+&nbsp;import br.ifsp.demo.infra.persistence.entity.CategoryEntity;
+&nbsp;import org.springframework.data.jpa.repository.*;
+&nbsp;import org.springframework.data.repository.query.Param;
+&nbsp;import org.springframework.stereotype.Repository;
+&nbsp;import java.util.List;
+&nbsp;
+&nbsp;@Repository
+&nbsp;public interface CategoryJpaRepository extends JpaRepository&lt;CategoryEntity, String&gt; {
+&nbsp;
+&nbsp;    boolean existsByIdAndUserId(String id, String userId);
+&nbsp;
+&nbsp;    @Query(&quot;select (count(c)&gt;0) from CategoryEntity c &quot; +
+&nbsp;           &quot;where c.userId=:userId and ((:parentId is null and c.parentId is null) or c.parentId=:parentId) &quot; +
+&nbsp;           &quot;and lower(c.name)=:normalized&quot;)
+&nbsp;    boolean existsSiblingByNormalized(@Param(&quot;userId&quot;) String userId,
+&nbsp;                                      @Param(&quot;parentId&quot;) String parentId,
+&nbsp;                                      @Param(&quot;normalized&quot;) String normalized);
+&nbsp;
+&nbsp;    @Query(&quot;select (count(c)&gt;0) from CategoryEntity c where c.userId=:userId and c.path=:path&quot;)
+&nbsp;    boolean existsByUserAndPath(@Param(&quot;userId&quot;) String userId, @Param(&quot;path&quot;) String path);
+&nbsp;
+&nbsp;    @Query(&quot;select (count(c)&gt;0) from CategoryEntity c where c.userId=:userId and c.parentId=:id&quot;)
+&nbsp;    boolean hasChildren(@Param(&quot;id&quot;) String id, @Param(&quot;userId&quot;) String userId);
+&nbsp;
+&nbsp;    void deleteByIdAndUserId(String id, String userId);
+&nbsp;
+&nbsp;    @Query(&quot;select c.path from CategoryEntity c where c.id=:id and c.userId=:userId&quot;)
+&nbsp;    String findPath(@Param(&quot;id&quot;) String id, @Param(&quot;userId&quot;) String userId);
+&nbsp;
+&nbsp;    @Query(&quot;select c from CategoryEntity c where c.userId=:userId order by c.path asc&quot;)
+&nbsp;    List&lt;CategoryEntity&gt; findAllOrdered(@Param(&quot;userId&quot;) String userId);
+&nbsp;
+&nbsp;    @Modifying @Query(&quot;update CategoryEntity c set c.name=:newName, c.path=:newPath where c.id=:id and c.userId=:userId&quot;)
+&nbsp;    int rename(@Param(&quot;id&quot;) String id, @Param(&quot;userId&quot;) String userId,
+&nbsp;               @Param(&quot;newName&quot;) String newName, @Param(&quot;newPath&quot;) String newPath);
+&nbsp;
+&nbsp;    @Modifying @Query(&quot;update CategoryEntity c set c.path = concat(:newPrefix, substring(c.path, length(:oldPrefix)+1)) &quot; +
+&nbsp;                      &quot;where c.userId=:userId and c.path like concat(:oldPrefix, &#39;%&#39;)&quot;)
+&nbsp;    int updatePathPrefix(@Param(&quot;userId&quot;) String userId,
+&nbsp;                         @Param(&quot;oldPrefix&quot;) String oldPrefix,
+&nbsp;                         @Param(&quot;newPrefix&quot;) String newPrefix);
+&nbsp;
+&nbsp;    @Modifying @Query(&quot;update CategoryEntity c set c.parentId=:newParentId, c.path=:newPath &quot; +
+&nbsp;                      &quot;where c.id=:id and c.userId=:userId&quot;)
+&nbsp;    int move(@Param(&quot;id&quot;) String id, @Param(&quot;userId&quot;) String userId,
+&nbsp;             @Param(&quot;newParentId&quot;) String newParentId, @Param(&quot;newPath&quot;) String newPath);
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2025-10-23 10:42</div>
+</div>
+</body>
+</html>

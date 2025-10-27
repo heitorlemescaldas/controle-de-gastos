@@ -1,0 +1,200 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=windows-1252"> 
+  <title>Coverage Report > GoalService</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">br.ifsp.demo.domain.service</a>
+</div>
+
+<h1>Coverage Summary for Class: GoalService (br.ifsp.demo.domain.service)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">GoalService</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (42/42)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package br.ifsp.demo.domain.service;
+&nbsp;
+&nbsp;import br.ifsp.demo.domain.model.Expense;
+&nbsp;import br.ifsp.demo.domain.model.ExpenseType;
+&nbsp;import br.ifsp.demo.domain.model.Goal;
+&nbsp;import br.ifsp.demo.domain.model.GoalEvaluation;
+&nbsp;import br.ifsp.demo.domain.port.CategoryRepositoryPort;
+&nbsp;import br.ifsp.demo.domain.port.ExpenseRepositoryPort;
+&nbsp;import br.ifsp.demo.domain.port.GoalRepositoryPort;
+&nbsp;
+&nbsp;import java.math.BigDecimal;
+&nbsp;import java.time.Instant;
+&nbsp;import java.time.YearMonth;
+&nbsp;import java.time.ZoneOffset;
+&nbsp;import java.util.List;
+&nbsp;
+&nbsp;import org.springframework.stereotype.Service;
+&nbsp;
+&nbsp;@Service
+&nbsp;public class GoalService {
+&nbsp;
+&nbsp;    private final GoalRepositoryPort goalRepo;
+&nbsp;    private final CategoryRepositoryPort categoryRepo;
+&nbsp;    private final ExpenseRepositoryPort expenseRepo;
+&nbsp;
+&nbsp;    // Construtor legacy (C01) – sem despesas
+&nbsp;    public GoalService(GoalRepositoryPort goalRepo, CategoryRepositoryPort categoryRepo) {
+<b class="fc">&nbsp;        this(goalRepo, categoryRepo, null);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    // Construtor completo (C02) – com despesas
+&nbsp;    public GoalService(GoalRepositoryPort goalRepo,
+&nbsp;                       CategoryRepositoryPort categoryRepo,
+<b class="fc">&nbsp;                       ExpenseRepositoryPort expenseRepo) {</b>
+<b class="fc">&nbsp;        this.goalRepo = goalRepo;</b>
+<b class="fc">&nbsp;        this.categoryRepo = categoryRepo;</b>
+<b class="fc">&nbsp;        this.expenseRepo = expenseRepo;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    // C01 – definir meta mensal para categoria raiz
+&nbsp;    public Goal setMonthlyGoal(String userId, String rootCategoryId, YearMonth month, BigDecimal limitAmount) {
+<b class="fc">&nbsp;        if (userId == null || userId.isBlank()) throw new IllegalArgumentException(&quot;userId obrigatório&quot;);</b>
+<b class="fc">&nbsp;        if (rootCategoryId == null || rootCategoryId.isBlank()) throw new IllegalArgumentException(&quot;categoryId obrigatório&quot;);</b>
+<b class="fc">&nbsp;        if (month == null) throw new IllegalArgumentException(&quot;mês obrigatório&quot;);</b>
+<b class="fc">&nbsp;        if (limitAmount == null || limitAmount.compareTo(BigDecimal.ZERO) &lt;= 0)</b>
+<b class="fc">&nbsp;            throw new IllegalArgumentException(&quot;limite deve ser positivo&quot;);</b>
+&nbsp;
+<b class="fc">&nbsp;        if (!categoryRepo.existsByIdAndUser(rootCategoryId, userId))</b>
+<b class="fc">&nbsp;            throw new IllegalArgumentException(&quot;categoria inexistente&quot;);</b>
+&nbsp;
+<b class="fc">&nbsp;        String path = categoryRepo.findPathById(rootCategoryId, userId);</b>
+<b class="fc">&nbsp;        if (path == null || path.isBlank() || path.contains(&quot;/&quot;))</b>
+<b class="fc">&nbsp;            throw new IllegalArgumentException(&quot;categoria deve ser raiz&quot;);</b>
+&nbsp;
+<b class="fc">&nbsp;        var goal = Goal.monthly(userId, rootCategoryId, month, limitAmount);</b>
+<b class="fc">&nbsp;        return goalRepo.save(goal);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    // C02 – avaliar excedente no mês (soma débitos da árvore)
+&nbsp;    public GoalEvaluation evaluateMonthly(String userId, String rootCategoryId, YearMonth month) {
+<b class="fc">&nbsp;        if (userId == null || userId.isBlank()) throw new IllegalArgumentException(&quot;userId obrigatório&quot;);</b>
+<b class="fc">&nbsp;        if (rootCategoryId == null || rootCategoryId.isBlank()) throw new IllegalArgumentException(&quot;categoryId obrigatório&quot;);</b>
+<b class="fc">&nbsp;        if (month == null) throw new IllegalArgumentException(&quot;mês obrigatório&quot;);</b>
+&nbsp;
+<b class="fc">&nbsp;        Goal goal = goalRepo.findByUserAndCategoryAndMonth(userId, rootCategoryId, month)</b>
+<b class="fc">&nbsp;                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;meta inexistente&quot;));</b>
+&nbsp;
+<b class="fc">&nbsp;        String rootPath = categoryRepo.findPathById(rootCategoryId, userId);</b>
+<b class="fc">&nbsp;        if (rootPath == null || rootPath.isBlank())</b>
+<b class="fc">&nbsp;            throw new IllegalArgumentException(&quot;categoria raiz inexistente&quot;);</b>
+&nbsp;
+<b class="fc">&nbsp;        if (expenseRepo == null)</b>
+<b class="fc">&nbsp;            throw new IllegalStateException(&quot;expenseRepo não configurado&quot;);</b>
+&nbsp;
+<b class="fc">&nbsp;        Instant start = month.atDay(1).atStartOfDay(ZoneOffset.UTC).toInstant();</b>
+<b class="fc">&nbsp;        Instant end   = month.plusMonths(1).atDay(1).atStartOfDay(ZoneOffset.UTC).toInstant().minusNanos(1);</b>
+&nbsp;
+<b class="fc">&nbsp;        List&lt;Expense&gt; txs = expenseRepo.findByUserAndPeriod(userId, start, end);</b>
+&nbsp;
+<b class="fc">&nbsp;        BigDecimal spent = BigDecimal.ZERO;</b>
+<b class="fc">&nbsp;        for (Expense e : txs) {</b>
+<b class="fc">&nbsp;            if (e.type() != ExpenseType.DEBIT) continue;</b>
+<b class="fc">&nbsp;            if (e.categoryId() == null) continue;</b>
+<b class="fc">&nbsp;            String path = categoryRepo.findPathById(e.categoryId(), e.userId());</b>
+<b class="fc">&nbsp;            if (path == null || path.isBlank()) continue;</b>
+<b class="fc">&nbsp;            if (path.equals(rootPath) || path.startsWith(rootPath + &quot;/&quot;)) {</b>
+<b class="fc">&nbsp;                spent = spent.add(e.amount());</b>
+&nbsp;            }
+<b class="fc">&nbsp;        }</b>
+&nbsp;
+<b class="fc">&nbsp;        boolean exceeded = spent.compareTo(goal.limitAmount()) &gt; 0;</b>
+<b class="fc">&nbsp;        BigDecimal diff = exceeded ? spent.subtract(goal.limitAmount()) : BigDecimal.ZERO;</b>
+&nbsp;
+<b class="fc">&nbsp;        return new GoalEvaluation(userId, rootCategoryId, month, goal.limitAmount(), spent, exceeded, diff);</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2025-10-23 10:42</div>
+</div>
+</body>
+</html>
