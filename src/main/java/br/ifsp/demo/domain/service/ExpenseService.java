@@ -6,6 +6,7 @@ import br.ifsp.demo.domain.port.ExpenseRepositoryPort;
 
 import java.math.BigDecimal;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -20,6 +21,7 @@ public class ExpenseService {
     }
 
     // novo construtor para cenários com categoria
+    @Autowired
     public ExpenseService(ExpenseRepositoryPort expenseRepo, CategoryRepositoryPort categoryRepo) {
         this.expenseRepo = expenseRepo;
         this.categoryRepo = categoryRepo;

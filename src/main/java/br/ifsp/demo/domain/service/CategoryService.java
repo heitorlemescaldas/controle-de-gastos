@@ -10,6 +10,7 @@ import java.util.Arrays;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -47,7 +48,7 @@ public class CategoryService {
         this(repo, null);
     }
 
-    // novo construtor para operações que precisam checar uso em despesas
+    @Autowired
     public CategoryService(CategoryRepositoryPort repo, ExpenseRepositoryPort expenseRepo) {
         this.repo = repo;
         this.expenseRepo = expenseRepo;
