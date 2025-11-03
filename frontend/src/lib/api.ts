@@ -2,6 +2,7 @@
  * Cliente HTTP minimalista usando fetch.
  * - Base URL: import.meta.env.VITE_API_BASE_URL
  * - Injeta Authorization: Bearer <token> (se existir)
+ * - Injeta X-User com o e-mail (claim 'sub' do JWT), se existir
  * - Trata 401: limpa sessão e redireciona para /login
  * - Normaliza erros em uma ApiError
  */
@@ -37,7 +38,19 @@ type RequestOptions = Omit<RequestInit, "method" | "body" | "headers"> & {
   headers?: Record<string, string>;
 };
 
-/** Monta headers padrão + Authorization (se houver) */
+/** Extrai o 'sub' (e-mail) do JWT para usar no header X-User */
+function extractSubFromJwt(token: string | null): string | null {
+  if (!token) return null;
+  try {
+    const payload = token.split(".")[1];
+    const json = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
+    return json?.sub ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** Monta headers padrão + Authorization (se houver) + X-User (se houver) */
 function buildHeaders(auth: boolean, extra?: Record<string, string>) {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -47,12 +60,15 @@ function buildHeaders(auth: boolean, extra?: Record<string, string>) {
   if (auth) {
     const token = getToken();
     if (token) headers.Authorization = `Bearer ${token}`;
+
+    // Envia X-User com o e-mail do usuário (conforme Swagger)
+    const sub = extractSubFromJwt(token);
+    if (sub) headers["X-User"] = sub;
   }
   return headers;
 }
 
 async function handleResponse<T>(res: Response): Promise<T> {
-  // Tenta ler JSON quando houver.
   const contentType = res.headers.get("content-type") ?? "";
   const isJson = contentType.includes("application/json");
   const body = isJson ? await res.json().catch(() => null) : await res.text().catch(() => null);
@@ -62,7 +78,6 @@ async function handleResponse<T>(res: Response): Promise<T> {
   }
 
   if (res.status === 401) {
-    // Sessão inválida/expirada → limpa e manda pro login
     clearToken();
     try {
       if (typeof window !== "undefined" && window.location.pathname !== "/login") {
@@ -73,7 +88,6 @@ async function handleResponse<T>(res: Response): Promise<T> {
     }
   }
 
-  // Levanta um erro rico para os callers tratarem (toasts, etc.)
   const message =
     (isJson && (body as any)?.message) ||
     (isJson && (body as any)?.error) ||
@@ -81,7 +95,7 @@ async function handleResponse<T>(res: Response): Promise<T> {
   throw new ApiError(message, res.status, body);
 }
 
-async function request<T>(method: HttpMethod, path: string, options: RequestOptions = {}): Promise<T> {
+async function request<T>(method: HttpMethod, path: string, options: RequestOptions = {}) {
   const { auth = true, body, headers: extraHeaders, ...rest } = options;
 
   const url = `${BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
@@ -114,7 +128,6 @@ export const api = {
 
 // Pequenos atalhos úteis durante dev
 export async function pingHello(): Promise<string> {
-  // endpoint público ou protegido? Se protegido, remover auth:false
   const res = await api.get<string>("/api/v1/hello", { auth: true });
   return res;
 }
