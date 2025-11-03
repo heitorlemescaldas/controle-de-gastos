@@ -25,13 +25,10 @@ import static org.springframework.security.config.http.SessionCreationPolicy.STA
 @RequiredArgsConstructor
 public class SecurityConfiguration {
 
-    // Somente o que realmente precisa ser público.
+    // Endpoints realmente públicos (auth + springdoc em caminhos padrão)
     private static final String[] WHITE_LIST_URL = {
-            // Auth pública
             "/api/v1/authenticate",
             "/api/v1/register",
-
-            // Swagger (springdoc) — sem /api/v1
             "/v3/api-docs",
             "/v3/api-docs/**",
             "/swagger-ui.html",
@@ -44,20 +41,15 @@ public class SecurityConfiguration {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // CORS global (usa o bean corsConfigurationSource abaixo)
                 .cors(Customizer.withDefaults())
-                // API stateless com JWT
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(STATELESS))
-                // Autorização
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(WHITE_LIST_URL).permitAll()
                         .anyRequest().authenticated()
                 )
-                // Provider e filtro JWT
                 .authenticationProvider(authenticationProvider)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-                // 401 para requisições não autenticadas
                 .exceptionHandling(it -> it.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)));
 
         return http.build();
@@ -66,21 +58,17 @@ public class SecurityConfiguration {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-
-        // Origens permitidas (Vite padrão)
+        // front em Vite (5173)
         config.setAllowedOrigins(List.of(
                 "http://localhost:5173",
                 "http://127.0.0.1:5173"
         ));
-
-        // Métodos e cabeçalhos
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         config.setExposedHeaders(List.of("Authorization"));
-        config.setAllowCredentials(true); // ok mesmo usando JWT em header
+        config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        // Aplica para todos os endpoints
         source.registerCorsConfiguration("/**", config);
         return source;
     }
