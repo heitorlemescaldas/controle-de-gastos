@@ -25,12 +25,17 @@ import static org.springframework.security.config.http.SessionCreationPolicy.STA
 @RequiredArgsConstructor
 public class SecurityConfiguration {
 
+    // Somente o que realmente precisa ser público.
     private static final String[] WHITE_LIST_URL = {
+            // Auth pública
             "/api/v1/authenticate",
             "/api/v1/register",
-            "/api/v1/api-docs/**",
-            "/api/v1/openapi/**",
-            "/api/v1/swagger-ui/**"
+
+            // Swagger (springdoc) — sem /api/v1
+            "/v3/api-docs",
+            "/v3/api-docs/**",
+            "/swagger-ui.html",
+            "/swagger-ui/**"
     };
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -39,17 +44,17 @@ public class SecurityConfiguration {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // Habilita CORS (usa o bean corsConfigurationSource abaixo)
+                // CORS global (usa o bean corsConfigurationSource abaixo)
                 .cors(Customizer.withDefaults())
-                // Desabilita CSRF (estamos usando JWT stateless)
+                // API stateless com JWT
                 .csrf(AbstractHttpConfigurer::disable)
-                // Autorização
-                .authorizeHttpRequests(req ->
-                        req.requestMatchers(WHITE_LIST_URL).permitAll()
-                                .anyRequest().authenticated()
-                )
-                // Stateless + Provider + Filtro JWT
                 .sessionManagement(session -> session.sessionCreationPolicy(STATELESS))
+                // Autorização
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(WHITE_LIST_URL).permitAll()
+                        .anyRequest().authenticated()
+                )
+                // Provider e filtro JWT
                 .authenticationProvider(authenticationProvider)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 // 401 para requisições não autenticadas
@@ -61,18 +66,18 @@ public class SecurityConfiguration {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        // Origens permitidas (Vite padrão usa 5173)
+
+        // Origens permitidas (Vite padrão)
         config.setAllowedOrigins(List.of(
                 "http://localhost:5173",
                 "http://127.0.0.1:5173"
         ));
-        // Métodos e cabeçalhos permitidos
+
+        // Métodos e cabeçalhos
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
-        // Cabeçalhos expostos (opcional)
         config.setExposedHeaders(List.of("Authorization"));
-        // Se usar cookies/same-site; com JWT em header não é necessário, mas não atrapalha
-        config.setAllowCredentials(true);
+        config.setAllowCredentials(true); // ok mesmo usando JWT em header
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         // Aplica para todos os endpoints
