@@ -11,6 +11,7 @@ import { Wallet, TrendingUp, TrendingDown, Plus, DollarSign } from "lucide-react
 import { listCategories, type CategoryNode } from "@/services/categories";
 import { createExpense, toIsoTimestamp, type CreateExpenseRequest } from "@/services/expenses";
 import { usePeriodReport } from "@/hooks/useReports";
+import { useGoalEvaluation, useSetGoal } from "@/hooks/useGoalsApi";
 
 // ===== helpers de período (mês atual) =====
 function getMonthRange(): { start: string; end: string } {
@@ -64,7 +65,6 @@ const Index = () => {
   });
 
   async function handleAddTransaction() {
-    // validações simples no front (o back também valida)
     const errors: string[] = [];
     if (!form.description.trim()) errors.push("Descrição é obrigatória");
     if (!form.amount || Number(form.amount) <= 0) errors.push("Valor deve ser maior que zero");
@@ -86,12 +86,25 @@ const Index = () => {
       await createExpense(payload);
       toast({ title: "Transação criada com sucesso" });
       setForm({ description: "", amount: "", type: "expense", categoryId: "" });
-      // atualiza cards/itens do relatório
-      await refetchReport();
+      await refetchReport(); // atualiza cards/itens do relatório
     } catch (e: any) {
       toast({ title: "Falha ao criar transação", description: e?.message ?? "Erro", variant: "destructive" });
     }
   }
+
+  // ===== metas (definir/avaliar) =====
+  const [goalRootId, setGoalRootId] = useState<string>("");
+  const [goalMonth, setGoalMonth] = useState<string>(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; // YYYY-MM
+  });
+  const [goalLimit, setGoalLimit] = useState<string>("0.00");
+
+  const { data: goalEval, isPending: loadingGoal } = useGoalEvaluation({
+    rootCategoryId: goalRootId,
+    month: goalMonth,
+  });
+  const setGoalMutation = useSetGoal();
 
   // ===== métricas =====
   const balance = report?.balance ?? 0;
@@ -226,6 +239,117 @@ const Index = () => {
                   <Plus className="h-4 w-4 mr-2" />
                   Adicionar Transação
                 </Button>
+              </div>
+            </Card>
+
+            {/* Metas de Gastos */}
+            <Card className="p-6 bg-gradient-card shadow-card border-border">
+              <div className="flex items-center space-x-2 mb-6">
+                <h2 className="text-xl font-semibold text-foreground">Metas de Gastos</h2>
+              </div>
+
+              {/* Formulário para definir/atualizar meta */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div className="space-y-2">
+                  <Label className="text-foreground">Categoria raiz</Label>
+                  <Select
+                    value={goalRootId}
+                    onValueChange={setGoalRootId}
+                    disabled={loadingCats}
+                  >
+                    <SelectTrigger className="bg-background border-border text-foreground">
+                      <SelectValue placeholder={loadingCats ? "Carregando..." : "Selecione a categoria raiz"} />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover border-border">
+                      {categories
+                        .filter(c => !c.parentId) // somente raízes
+                        .map(c => (
+                          <SelectItem key={c.id} value={c.id} className="text-foreground">
+                            {c.path || c.name}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-foreground">Mês (YYYY-MM)</Label>
+                  <Input
+                    value={goalMonth}
+                    onChange={(e) => setGoalMonth(e.target.value)}
+                    placeholder="2025-11"
+                    className="bg-background border-border text-foreground"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-foreground">Limite (R$)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={goalLimit}
+                    onChange={(e) => setGoalLimit(e.target.value)}
+                    placeholder="800.00"
+                    className="bg-background border-border text-foreground"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  onClick={async () => {
+                    if (!goalRootId || !goalMonth || Number(goalLimit) <= 0) {
+                      toast({ title: "Preencha categoria, mês e limite > 0", variant: "destructive" });
+                      return;
+                    }
+                    try {
+                      await setGoalMutation.mutateAsync({
+                        rootCategoryId: goalRootId,
+                        month: goalMonth,
+                        limit: goalLimit.replace(",", "."),
+                      });
+                      toast({ title: "Meta definida/atualizada com sucesso" });
+                    } catch (e: any) {
+                      toast({ title: "Falha ao definir meta", description: e?.message ?? "Erro", variant: "destructive" });
+                    }
+                  }}
+                  className="bg-gradient-primary text-primary-foreground"
+                >
+                  Definir/Ajustar Meta
+                </Button>
+              </div>
+
+              {/* Resultado da avaliação */}
+              <div className="mt-6">
+                {goalRootId ? (
+                  loadingGoal ? (
+                    <div className="text-sm text-muted-foreground">Calculando avaliação…</div>
+                  ) : goalEval ? (
+                    <div className="space-y-2">
+                      <div className="text-sm">
+                        Limite:{" "}
+                        <span className="font-medium">
+                          {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(goalEval.limit)}
+                        </span>
+                      </div>
+                      <div className="text-sm">
+                        Gasto:{" "}
+                        <span className="font-medium">
+                          {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(goalEval.spent)}
+                        </span>
+                      </div>
+                      <div className={`text-sm font-semibold ${goalEval.exceeded ? "text-danger" : "text-success"}`}>
+                        {goalEval.exceeded ? "Meta EXCEDIDA" : "Dentro da meta"} — Diferença:{" "}
+                        {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(goalEval.diff)}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-muted-foreground">Sem dados para a combinação selecionada.</div>
+                  )
+                ) : (
+                  <div className="text-sm text-muted-foreground">Selecione uma categoria raiz para ver a avaliação.</div>
+                )}
               </div>
             </Card>
           </div>
