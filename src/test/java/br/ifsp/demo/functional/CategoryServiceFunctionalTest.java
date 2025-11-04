@@ -92,12 +92,12 @@ class CategoryServiceCoverageTest {
         var sut  = new CategoryService(repo, expenseRepo);
 
         var user = "u1"; var child = "c1"; var newParent = "p2";
-
         when(repo.findPathById(child, user)).thenReturn("A/B");
         when(repo.existsByIdAndUser(newParent, user)).thenReturn(false);
 
         assertThatThrownBy(() -> sut.move(child, newParent, user))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("categoria pai inexistente"); // <-- Correção aqui!
 
         verify(repo, never()).move(any(), any(), any(), any());
     }

@@ -1,0 +1,290 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=windows-1252"> 
+  <title>Coverage Report > CategoryService</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">br.ifsp.demo.domain.service</a>
+</div>
+
+<h1>Coverage Summary for Class: CategoryService (br.ifsp.demo.domain.service)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">CategoryService</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (10/10)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (90/90)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package br.ifsp.demo.domain.service;
+&nbsp;
+&nbsp;import br.ifsp.demo.domain.model.Category;
+&nbsp;import br.ifsp.demo.domain.model.CategoryNode;
+&nbsp;import br.ifsp.demo.domain.port.CategoryRepositoryPort;
+&nbsp;import br.ifsp.demo.domain.port.ExpenseRepositoryPort;
+&nbsp;
+&nbsp;import java.util.regex.Pattern;
+&nbsp;import java.util.Arrays;
+&nbsp;
+&nbsp;import java.util.List;
+&nbsp;
+&nbsp;import org.springframework.stereotype.Service;
+&nbsp;
+&nbsp;@Service
+&nbsp;public class CategoryService {
+&nbsp;
+&nbsp;    private final CategoryRepositoryPort repo;
+&nbsp;    private final ExpenseRepositoryPort expenseRepo; // pode ser null para cenários que não usam
+&nbsp;
+&nbsp;    // C11 - validação de nome
+&nbsp;    private static final int MAX_NAME = 50;
+&nbsp;    // Letras (Unicode), dígitos, espaço, &#39;_&#39; e &#39;-&#39;
+<b class="fc">&nbsp;    private static final Pattern NAME_PATTERN = Pattern.compile(&quot;^[\\p{L}\\p{N} _-]+$&quot;);</b>
+&nbsp;
+&nbsp;    private static void ensureValidName(String trimmed) {
+<b class="fc">&nbsp;        if (trimmed.length() &gt; MAX_NAME) {</b>
+<b class="fc">&nbsp;            throw new IllegalArgumentException(&quot;nome inválido: comprimento máximo é 50&quot;);</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (!NAME_PATTERN.matcher(trimmed).matches()) {</b>
+<b class="fc">&nbsp;            throw new IllegalArgumentException(&quot;nome inválido: caracteres proibidos&quot;);</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    // C10 - profundidade máxima do caminho (ex.: Raiz=1, Filho=2, Neto=3)
+&nbsp;    private static final int MAX_DEPTH = 3;
+&nbsp;
+&nbsp;    private static int depthOf(String path) {
+<b class="fc">&nbsp;        if (path == null || path.isBlank()) return 0;</b>
+<b class="fc">&nbsp;        return (int) Arrays.stream(path.split(&quot;/&quot;))</b>
+<b class="fc">&nbsp;                .filter(s -&gt; s != null &amp;&amp; !s.isBlank())</b>
+<b class="fc">&nbsp;                .count();</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    // construtor existente (continua para C01..C03)
+&nbsp;    public CategoryService(CategoryRepositoryPort repo) {
+<b class="fc">&nbsp;        this(repo, null);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    // novo construtor para operações que precisam checar uso em despesas
+<b class="fc">&nbsp;    public CategoryService(CategoryRepositoryPort repo, ExpenseRepositoryPort expenseRepo) {</b>
+<b class="fc">&nbsp;        this.repo = repo;</b>
+<b class="fc">&nbsp;        this.expenseRepo = expenseRepo;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    public Category create(Category category) {
+<b class="fc">&nbsp;        if (category == null) throw new IllegalArgumentException(&quot;categoria obrigatória&quot;);</b>
+<b class="fc">&nbsp;        if (category.userId() == null) throw new IllegalArgumentException(&quot;userId obrigatório&quot;);</b>
+<b class="fc">&nbsp;        if (category.name() == null || category.name().isBlank())</b>
+<b class="fc">&nbsp;            throw new IllegalArgumentException(&quot;nome obrigatório&quot;);</b>
+&nbsp;
+<b class="fc">&nbsp;        var trimmedName = category.name().trim();</b>
+<b class="fc">&nbsp;        ensureValidName(trimmedName); // C11: nome válido</b>
+<b class="fc">&nbsp;        var normalizedName = trimmedName.toLowerCase();</b>
+<b class="fc">&nbsp;        var normalized = category.withName(trimmedName);</b>
+&nbsp;
+<b class="fc">&nbsp;        if (normalized.parentId() != null) {</b>
+<b class="fc">&nbsp;            boolean parentExists = repo.existsByIdAndUser(normalized.parentId(), normalized.userId());</b>
+<b class="fc">&nbsp;            if (!parentExists) throw new IllegalArgumentException(&quot;categoria pai inexistente&quot;);</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        if (repo.existsByUserAndParentAndNameNormalized(</b>
+<b class="fc">&nbsp;                normalized.userId(), normalized.parentId(), normalizedName)) {</b>
+<b class="fc">&nbsp;            throw new IllegalArgumentException(&quot;categoria duplicada&quot;);</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        if (normalized.parentId() != null) {</b>
+<b class="fc">&nbsp;            boolean parentExists = repo.existsByIdAndUser(normalized.parentId(), normalized.userId());</b>
+<b class="fc">&nbsp;            if (!parentExists) throw new IllegalArgumentException(&quot;categoria pai inexistente&quot;);</b>
+&nbsp;
+&nbsp;            // C10: calcular o caminho candidato e checar profundidade
+<b class="fc">&nbsp;            String parentPath = repo.findPathById(normalized.parentId(), normalized.userId());</b>
+<b class="fc">&nbsp;            if (parentPath == null || parentPath.isBlank()) {</b>
+<b class="fc">&nbsp;                throw new IllegalStateException(&quot;caminho do parent inexistente&quot;);</b>
+&nbsp;            }
+<b class="fc">&nbsp;            String candidatePath = parentPath + &quot;/&quot; + normalized.name();</b>
+<b class="fc">&nbsp;            if (depthOf(candidatePath) &gt; MAX_DEPTH) {</b>
+<b class="fc">&nbsp;                throw new IllegalArgumentException(&quot;profundidade máxima excedida&quot;);</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        return repo.save(normalized);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    // C05: exclusão com bloqueios
+&nbsp;    public void delete(String categoryId, String userId) {
+<b class="fc">&nbsp;        if (categoryId == null || categoryId.isBlank()) throw new IllegalArgumentException(&quot;categoryId obrigatório&quot;);</b>
+<b class="fc">&nbsp;        if (userId == null || userId.isBlank())         throw new IllegalArgumentException(&quot;userId obrigatório&quot;);</b>
+&nbsp;
+<b class="fc">&nbsp;        if (repo.hasChildren(categoryId, userId)) {</b>
+<b class="fc">&nbsp;            throw new IllegalStateException(&quot;categoria possui subcategorias&quot;);</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (expenseRepo != null &amp;&amp; expenseRepo.existsByUserAndCategory(userId, categoryId)) {</b>
+<b class="fc">&nbsp;            throw new IllegalStateException(&quot;categoria em uso&quot;);</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        repo.delete(categoryId, userId);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    public void rename(String categoryId, String userId, String newName) {
+<b class="fc">&nbsp;        if (categoryId == null || categoryId.isBlank())</b>
+<b class="fc">&nbsp;            throw new IllegalArgumentException(&quot;categoryId obrigatório&quot;);</b>
+<b class="fc">&nbsp;        if (userId == null || userId.isBlank())</b>
+<b class="fc">&nbsp;            throw new IllegalArgumentException(&quot;userId obrigatório&quot;);</b>
+<b class="fc">&nbsp;        if (newName == null || newName.isBlank())</b>
+<b class="fc">&nbsp;            throw new IllegalArgumentException(&quot;nome obrigatório&quot;);</b>
+&nbsp;
+<b class="fc">&nbsp;        var trimmed = newName.trim();</b>
+<b class="fc">&nbsp;        ensureValidName(trimmed); // C11: nome válido</b>
+&nbsp;
+<b class="fc">&nbsp;        var oldPath = repo.findPathById(categoryId, userId);</b>
+<b class="fc">&nbsp;        if (oldPath == null || oldPath.isBlank())</b>
+<b class="fc">&nbsp;            throw new IllegalStateException(&quot;caminho atual inexistente&quot;);</b>
+&nbsp;
+<b class="fc">&nbsp;        int slash = oldPath.lastIndexOf(&#39;/&#39;);</b>
+<b class="fc">&nbsp;        String newPath = (slash &gt;= 0) ? oldPath.substring(0, slash + 1) + trimmed : trimmed;</b>
+&nbsp;
+&nbsp;        // C08: se o novo path for diferente do atual e já existir, bloquear
+<b class="fc">&nbsp;        if (!newPath.equals(oldPath) &amp;&amp; repo.existsByUserAndPath(userId, newPath)) {</b>
+<b class="fc">&nbsp;            throw new IllegalArgumentException(&quot;caminho já existe&quot;);</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        repo.rename(categoryId, userId, trimmed, newPath);</b>
+<b class="fc">&nbsp;        repo.updatePathPrefix(userId, oldPath + &quot;/&quot;, newPath + &quot;/&quot;);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    public void move(String categoryId, String newParentId, String userId) {
+<b class="fc">&nbsp;        if (categoryId == null || categoryId.isBlank())</b>
+<b class="fc">&nbsp;            throw new IllegalArgumentException(&quot;categoryId obrigatório&quot;);</b>
+<b class="fc">&nbsp;        if (newParentId == null || newParentId.isBlank())</b>
+<b class="fc">&nbsp;            throw new IllegalArgumentException(&quot;newParentId obrigatório&quot;);</b>
+<b class="fc">&nbsp;        if (userId == null || userId.isBlank())</b>
+<b class="fc">&nbsp;            throw new IllegalArgumentException(&quot;userId obrigatório&quot;);</b>
+&nbsp;
+&nbsp;        // path atual do nó a mover
+<b class="fc">&nbsp;        var oldPath = repo.findPathById(categoryId, userId);</b>
+<b class="fc">&nbsp;        if (oldPath == null || oldPath.isBlank())</b>
+<b class="fc">&nbsp;            throw new IllegalStateException(&quot;caminho atual inexistente&quot;);</b>
+&nbsp;
+&nbsp;        // nome atual = último segmento do path
+<b class="fc">&nbsp;        int slash = oldPath.lastIndexOf(&#39;/&#39;);</b>
+<b class="fc">&nbsp;        String name = (slash &gt;= 0) ? oldPath.substring(slash + 1) : oldPath;</b>
+&nbsp;
+&nbsp;        // novo parent deve existir
+<b class="fc">&nbsp;        if (!repo.existsByIdAndUser(newParentId, userId))</b>
+<b class="fc">&nbsp;            throw new IllegalArgumentException(&quot;categoria pai inexistente&quot;);</b>
+&nbsp;
+<b class="fc">&nbsp;        var newParentPath = repo.findPathById(newParentId, userId);</b>
+<b class="fc">&nbsp;        if (newParentPath == null || newParentPath.isBlank())</b>
+<b class="fc">&nbsp;            throw new IllegalStateException(&quot;caminho do parent inexistente&quot;);</b>
+&nbsp;
+&nbsp;        // impedir ciclo (não mover para dentro do próprio subárvore)
+<b class="fc">&nbsp;        if ((newParentPath + &quot;/&quot;).startsWith(oldPath + &quot;/&quot;))</b>
+<b class="fc">&nbsp;            throw new IllegalArgumentException(&quot;movimento inválido: criaria ciclo&quot;);</b>
+&nbsp;
+&nbsp;        // checar duplicidade no destino (irmãos)
+<b class="fc">&nbsp;        var normalizedName = name.toLowerCase();</b>
+<b class="fc">&nbsp;        if (repo.existsByUserAndParentAndNameNormalized(userId, newParentId, normalizedName))</b>
+<b class="fc">&nbsp;            throw new IllegalArgumentException(&quot;categoria duplicada&quot;);</b>
+&nbsp;
+&nbsp;        // checar profundidade máxima (C10)
+<b class="fc">&nbsp;        String newPath = newParentPath + &quot;/&quot; + name;</b>
+<b class="fc">&nbsp;        if (depthOf(newPath) &gt; MAX_DEPTH)</b>
+<b class="fc">&nbsp;            throw new IllegalArgumentException(&quot;profundidade máxima excedida&quot;);</b>
+&nbsp;
+&nbsp;        // efetiva a troca do parent + path do nó e atualiza descendentes
+<b class="fc">&nbsp;        repo.move(categoryId, userId, newParentId, newPath);</b>
+<b class="fc">&nbsp;        repo.updatePathPrefix(userId, oldPath + &quot;/&quot;, newPath + &quot;/&quot;);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    public List&lt;CategoryNode&gt; listOrdered(String userId) {
+<b class="fc">&nbsp;        if (userId == null || userId.isBlank())</b>
+<b class="fc">&nbsp;            throw new IllegalArgumentException(&quot;userId obrigatório&quot;);</b>
+<b class="fc">&nbsp;        return repo.findAllByUserOrdered(userId);</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2025-10-23 10:42</div>
+</div>
+</body>
+</html>

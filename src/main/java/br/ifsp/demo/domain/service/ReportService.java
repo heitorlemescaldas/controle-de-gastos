@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.*;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -16,6 +17,7 @@ public class ReportService {
     private final ExpenseRepositoryPort expenseRepo;
     private final CategoryRepositoryPort categoryRepo;
 
+    @Autowired
     public ReportService(ExpenseRepositoryPort expenseRepo, CategoryRepositoryPort categoryRepo) {
         this.expenseRepo = expenseRepo;
         this.categoryRepo = categoryRepo;
@@ -37,7 +39,11 @@ public class ReportService {
             String path = "Sem categoria";
             if (e.categoryId() != null) {
                 String p = categoryRepo.findPathById(e.categoryId(), e.userId());
-                if (p != null && !p.isBlank()) path = p;
+                if (p != null && !p.isBlank()) {
+                    path = p;
+                } else {
+                    continue;
+                }
             }
             ReportItem current = map.getOrDefault(path, new ReportItem(path, BigDecimal.ZERO, BigDecimal.ZERO));
             if (e.type() == ExpenseType.DEBIT) {

@@ -1,0 +1,101 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=windows-1252"> 
+  <title>Coverage Report > CategoryRepositoryPort</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">br.ifsp.demo.domain.port</a>
+</div>
+
+<h1>Coverage Summary for Class: CategoryRepositoryPort (br.ifsp.demo.domain.port)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+</tr>
+  <tr>
+    <td class="name">CategoryRepositoryPort$MockitoMock$LJ2OsTnO</td>
+  </tr>
+  <tr>
+    <td class="name">CategoryRepositoryPort$MockitoMock$LJ2OsTnO$auxiliary$4MQtxl12</td>
+  </tr>
+  <tr>
+    <td class="name">CategoryRepositoryPort$MockitoMock$LJ2OsTnO$auxiliary$uyu3g0Qe</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package br.ifsp.demo.domain.port;
+&nbsp;
+&nbsp;import br.ifsp.demo.domain.model.Category;
+&nbsp;import br.ifsp.demo.domain.model.CategoryNode;
+&nbsp;
+&nbsp;import java.util.List;
+&nbsp;
+&nbsp;public interface CategoryRepositoryPort {
+&nbsp;    boolean existsByIdAndUser(String categoryId, String userId);
+&nbsp;    Category save(Category category);
+&nbsp;    boolean existsByUserAndParentAndNameNormalized(String userId, String parentId, String normalizedName);
+&nbsp;
+&nbsp;    boolean hasChildren(String categoryId, String userId);
+&nbsp;    void delete(String categoryId, String userId);
+&nbsp;
+&nbsp;    String findPathById(String categoryId, String userId);
+&nbsp;    void rename(String categoryId, String userId, String newName, String newPath);
+&nbsp;    void updatePathPrefix(String userId, String oldPrefix, String newPrefix);
+&nbsp;    boolean existsByUserAndPath(String userId, String path);
+&nbsp;    void move(String categoryId, String userId, String newParentId, String newPath);
+&nbsp;
+&nbsp;    // NOVO: retorna já ordenado por path
+&nbsp;    List&lt;CategoryNode&gt; findAllByUserOrdered(String userId);
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2025-10-23 10:42</div>
+</div>
+</body>
+</html>

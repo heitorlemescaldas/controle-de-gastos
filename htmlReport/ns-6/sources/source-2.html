@@ -1,0 +1,170 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=windows-1252"> 
+  <title>Coverage Report > ExpenseJpaAdapter</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">br.ifsp.demo.infra.persistence.adapter</a>
+</div>
+
+<h1>Coverage Summary for Class: ExpenseJpaAdapter (br.ifsp.demo.infra.persistence.adapter)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">ExpenseJpaAdapter</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/25)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package br.ifsp.demo.infra.persistence.adapter;
+&nbsp;
+&nbsp;import br.ifsp.demo.domain.model.Expense;
+&nbsp;import br.ifsp.demo.domain.port.ExpenseRepositoryPort;
+&nbsp;import br.ifsp.demo.infra.persistence.entity.ExpenseEntity;
+&nbsp;import br.ifsp.demo.infra.persistence.repo.ExpenseJpaRepository;
+&nbsp;import org.springframework.stereotype.Repository;
+&nbsp;import org.springframework.transaction.annotation.Transactional;
+&nbsp;
+&nbsp;import java.time.Instant;
+&nbsp;import java.util.List;
+&nbsp;
+&nbsp;@Repository
+&nbsp;@Transactional
+&nbsp;public class ExpenseJpaAdapter implements ExpenseRepositoryPort {
+&nbsp;
+&nbsp;    private final ExpenseJpaRepository repo;
+&nbsp;
+<b class="nc">&nbsp;    public ExpenseJpaAdapter(ExpenseJpaRepository repo) {</b>
+<b class="nc">&nbsp;        this.repo = repo;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private static ExpenseEntity toEntity(Expense d) {
+<b class="nc">&nbsp;        return new ExpenseEntity(</b>
+<b class="nc">&nbsp;                d.id(),</b>
+<b class="nc">&nbsp;                d.userId(),</b>
+<b class="nc">&nbsp;                d.amount(),</b>
+<b class="nc">&nbsp;                d.type(),</b>
+<b class="nc">&nbsp;                d.description(),</b>
+<b class="nc">&nbsp;                d.occurredAt(),</b>
+<b class="nc">&nbsp;                d.categoryId()</b>
+&nbsp;        );
+&nbsp;    }
+&nbsp;
+&nbsp;    private static Expense toDomain(ExpenseEntity e) {
+&nbsp;        // Usa factory + withId (construtor do domínio não é público)
+<b class="nc">&nbsp;        Expense base = Expense.of(</b>
+<b class="nc">&nbsp;                e.getUserId(),</b>
+<b class="nc">&nbsp;                e.getAmount(),</b>
+<b class="nc">&nbsp;                e.getType(),</b>
+<b class="nc">&nbsp;                e.getDescription(),</b>
+<b class="nc">&nbsp;                e.getTimestamp(),</b>
+<b class="nc">&nbsp;                e.getCategoryId()</b>
+&nbsp;        );
+<b class="nc">&nbsp;        return base.withId(e.getId());</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @Override
+&nbsp;    public Expense save(Expense expense) {
+<b class="nc">&nbsp;        ExpenseEntity saved = repo.save(toEntity(expense));</b>
+<b class="nc">&nbsp;        return expense.withId(saved.getId());</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @Override
+&nbsp;    public boolean existsByUserAndCategory(String userId, String categoryId) {
+<b class="nc">&nbsp;        return repo.existsByUserAndCategory(userId, categoryId);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @Override
+&nbsp;    public List&lt;Expense&gt; findByUserAndPeriod(String userId, Instant start, Instant end) {
+<b class="nc">&nbsp;        return repo.findByUserAndPeriod(userId, start, end)</b>
+<b class="nc">&nbsp;                   .stream()</b>
+<b class="nc">&nbsp;                   .map(ExpenseJpaAdapter::toDomain)</b>
+<b class="nc">&nbsp;                   .toList();</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2025-10-23 10:42</div>
+</div>
+</body>
+</html>
