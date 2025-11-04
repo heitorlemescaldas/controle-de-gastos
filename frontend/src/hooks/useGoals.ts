@@ -5,7 +5,6 @@ import { updateGoalsStatus } from '@/utils/calculations';
 export const useGoals = (initialGoals: Goal[], transactions: Transaction[]) => {
   const [goals, setGoals] = useState<Goal[]>(initialGoals);
 
-  // Atualiza automaticamente o status das metas quando as transações mudam
   const updatedGoals = useMemo(() => {
     return updateGoalsStatus(goals, transactions);
   }, [goals, transactions]);

@@ -13,7 +13,6 @@ import { createExpense, toIsoTimestamp, type CreateExpenseRequest } from "@/serv
 import { usePeriodReport } from "@/hooks/useReports";
 import { useGoalEvaluation, useSetGoal } from "@/hooks/useGoalsApi";
 
-// ===== helpers de período (mês atual) =====
 function getMonthRange(): { start: string; end: string } {
   const today = new Date();
   const start = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10); // YYYY-MM-DD
@@ -23,7 +22,7 @@ function getMonthRange(): { start: string; end: string } {
 
 type FormState = {
   description: string;
-  amount: string; // manter string para enviar ao back (Swagger define string)
+  amount: string;
   type: "expense" | "income";
   categoryId: string;
 };
@@ -31,7 +30,6 @@ type FormState = {
 const Index = () => {
   const { toast } = useToast();
 
-  // ===== categorias reais do backend =====
   const [categories, setCategories] = useState<CategoryNode[]>([]);
   const [loadingCats, setLoadingCats] = useState(false);
 
@@ -49,14 +47,12 @@ const Index = () => {
     })();
   }, [toast]);
 
-  // ===== relatório por período (cards do dashboard) =====
   const { start, end } = useMemo(getMonthRange, []);
   const { data: report, isPending: loadingReport, refetch: refetchReport, error: reportError } = usePeriodReport({
     start,
     end,
   });
 
-  // ===== formulário de nova transação (DESPESA/RECEITA) =====
   const [form, setForm] = useState<FormState>({
     description: "",
     amount: "",
@@ -92,7 +88,6 @@ const Index = () => {
     }
   }
 
-  // ===== metas (definir/avaliar) =====
   const [goalRootId, setGoalRootId] = useState<string>("");
   const [goalMonth, setGoalMonth] = useState<string>(() => {
     const d = new Date();
@@ -106,7 +101,6 @@ const Index = () => {
   });
   const setGoalMutation = useSetGoal();
 
-  // ===== métricas =====
   const balance = report?.balance ?? 0;
   const totalIncome = report?.totalCredit ?? 0;
   const totalExpenses = report?.totalDebit ?? 0;

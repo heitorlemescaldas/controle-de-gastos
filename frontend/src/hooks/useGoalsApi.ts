@@ -14,7 +14,6 @@ export function useSetGoal() {
   return useMutation({
     mutationFn: (body: SetGoalRequest) => setMonthlyGoal(body),
     onSuccess: (_data, variables) => {
-      // Recarrega avaliação dessa meta
       qc.invalidateQueries({ queryKey: ["goal:evaluate", { rootCategoryId: variables.rootCategoryId, month: variables.month }] });
     },
   });

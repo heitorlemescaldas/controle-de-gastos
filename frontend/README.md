@@ -30,6 +30,7 @@ A aplicação permite:
 - [Springdoc OpenAPI](https://springdoc.org/)
 - [SQLite](https://www.sqlite.org/) via JPA/Hibernate
 
+
 ---
 
 ## 🚀 Como Executar o Projeto

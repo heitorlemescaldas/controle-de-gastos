@@ -1,19 +1,8 @@
-/**
- * Cliente HTTP minimalista usando fetch.
- * - Base URL: import.meta.env.VITE_API_BASE_URL
- * - Injeta Authorization: Bearer <token> (se existir)
- * - Injeta X-User com o e-mail (claim 'sub' do JWT), se existir
- * - Trata 401: limpa sessão e redireciona para /login
- * - Normaliza erros em uma ApiError
- */
-
 import { getToken, clearToken } from "@/stores/session";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL?.replace(/\/+$/, "") ?? "";
 
 if (!BASE_URL) {
-  // Ajuda durante dev caso esqueça o .env
-  // eslint-disable-next-line no-console
   console.warn("VITE_API_BASE_URL não configurada. Defina no arquivo .env");
 }
 
@@ -30,15 +19,11 @@ export class ApiError extends Error {
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 type RequestOptions = Omit<RequestInit, "method" | "body" | "headers"> & {
-  /** Quando true (padrão), envia Authorization se houver token. */
   auth?: boolean;
-  /** Corpo JSON serializável. */
   body?: unknown;
-  /** Headers adicionais. */
   headers?: Record<string, string>;
 };
 
-/** Extrai o 'sub' (e-mail) do JWT para usar no header X-User */
 function extractSubFromJwt(token: string | null): string | null {
   if (!token) return null;
   try {
@@ -50,7 +35,6 @@ function extractSubFromJwt(token: string | null): string | null {
   }
 }
 
-/** Monta headers padrão + Authorization (se houver) + X-User (se houver) */
 function buildHeaders(auth: boolean, extra?: Record<string, string>) {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -61,7 +45,6 @@ function buildHeaders(auth: boolean, extra?: Record<string, string>) {
     const token = getToken();
     if (token) headers.Authorization = `Bearer ${token}`;
 
-    // Envia X-User com o e-mail do usuário (conforme Swagger)
     const sub = extractSubFromJwt(token);
     if (sub) headers["X-User"] = sub;
   }
