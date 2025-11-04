@@ -84,16 +84,3 @@ npm run test
 | `POST`   | `/api/v1/expenses`                       | Registra uma despesa           |
 | `GET`    | `/api/v1/goals/evaluate`                 | Avalia meta mensal             |
 
-🧰 Estrutura de Pastas (Frontend)
-
-frontend/
- ├─ src/
- │   ├─ lib/              # Configurações utilitárias (api, session, utils)
- │   ├─ services/         # Consumo da API (auth, categories, etc.)
- │   ├─ pages/            # Páginas principais (Login, Register, Dashboard)
- │   ├─ routes/           # Regras de rota protegida
- │   ├─ components/       # Componentes reutilizáveis
- │   └─ AppRouter.tsx     # Definição das rotas da aplicação
- ├─ index.html
- ├─ vite.config.ts
- └─ package.json
