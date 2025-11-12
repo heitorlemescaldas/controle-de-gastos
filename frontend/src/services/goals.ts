@@ -10,26 +10,20 @@ export type SetGoalRequest = {
 export type GoalEvaluation = {
   userId: string;
   categoryId: string;
-  month: {
-    year: number;
-    month: string;        // "JANUARY" ... "DECEMBER"
-    monthValue: number;   // 1..12
-    leapYear: boolean;
-  };
+  month: string;            // simplificado (YYYY-MM)
   limit: number;
   spent: number;
   exceeded: boolean;
-  diff: number;           // positivo se há saldo, negativo se excedeu
+  diff: number;
 };
 
-/** POST /api/v1/goals */
+/** POST /goals */
 export async function setMonthlyGoal(body: SetGoalRequest): Promise<void> {
-  await api.post<void>("/api/v1/goals", body);
+  await api.post<void>("/goals", body);
 }
 
 /**
- * GET /api/v1/goals/evaluate?rootCategoryId=...&month=YYYY-MM
- * (conforme Swagger)
+ * GET /goals/evaluate?rootCategoryId=...&month=YYYY-MM
  */
 function qs(params: Record<string, string>) {
   const s = Object.entries(params)
@@ -41,8 +35,8 @@ function qs(params: Record<string, string>) {
 
 export async function evaluateMonthlyGoal(params: {
   rootCategoryId: string;
-  month: string;     // "YYYY-MM"
+  month: string;
 }): Promise<GoalEvaluation> {
-  const url = `/api/v1/goals/evaluate${qs(params)}`;
+  const url = `/goals/evaluate${qs(params)}`;
   return api.get<GoalEvaluation>(url);
 }

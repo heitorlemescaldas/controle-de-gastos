@@ -32,7 +32,8 @@ public class SecurityConfiguration {
             "/v3/api-docs",
             "/v3/api-docs/**",
             "/swagger-ui.html",
-            "/swagger-ui/**"
+            "/swagger-ui/**",
+            "/error"
     };
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -64,8 +65,8 @@ public class SecurityConfiguration {
                 "http://127.0.0.1:5173"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
-        config.setExposedHeaders(List.of("Authorization"));
+        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-User"));
+        config.setExposedHeaders(List.of("Authorization", "X-User"));
         config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

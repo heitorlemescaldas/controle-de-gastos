@@ -3,7 +3,7 @@ import { setToken } from "@/stores/session";
 
 /** Schemas do Swagger */
 export type AuthRequest = {
-  username: string;
+  email: string;
   password: string;
 };
 
@@ -19,25 +19,27 @@ export type RegisterUserRequest = {
 };
 
 /**
- * POST /api/v1/authenticate
- * Body: { username, password }
+ * POST /authenticate
+ * Body: { email, password }
  * Res:  { token }
  */
 export async function login(payload: AuthRequest): Promise<AuthResponse> {
-  const res = await api.post<AuthResponse>("/api/v1/authenticate", payload, {
-    auth: false, // login não envia Authorization
-  });
+  // envia ambos: email e username (por compatibilidade com o backend)
+  const body = { email: payload.email, username: payload.email, password: payload.password };
+
+  const res = await api.post<AuthResponse>("/authenticate", body, { auth: false });
   if (res?.token) {
     setToken(res.token);
+    try { localStorage.setItem("email", payload.email); } catch {}
   }
   return res;
 }
 
 /**
- * POST /api/v1/register
+ * POST /register
  * Body: { name, lastname, email, password }
- * Res: vazio ou algum DTO (back pode retornar 200/201 sem body)
+ * Res: vazio ou {id} dependendo do back
  */
 export async function register(payload: RegisterUserRequest): Promise<void> {
-  await api.post<void>("/api/v1/register", payload, { auth: false });
+  await api.post<void>("/register", payload, { auth: false });
 }

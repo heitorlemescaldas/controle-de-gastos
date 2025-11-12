@@ -21,32 +21,32 @@ export type MoveRequest = {
   newParentId: string;
 };
 
-/** GET /api/v1/categories */
+/** GET /categories */
 export async function listCategories(): Promise<CategoryNode[]> {
-  return api.get<CategoryNode[]>("/api/v1/categories");
+  return api.get<CategoryNode[]>("/categories");
 }
 
-/** POST /api/v1/categories  (cria raiz) */
+/** POST /categories  (cria raiz) */
 export async function createRootCategory(body: CreateCategoryRequest): Promise<void> {
-  await api.post<void>("/api/v1/categories", body);
+  await api.post<void>("/categories", body);
 }
 
-/** POST /api/v1/categories/{parentId}/children  (cria filha) */
+/** POST /categories/{parentId}/children  (cria filha) */
 export async function createChildCategory(parentId: string, body: CreateCategoryRequest): Promise<void> {
-  await api.post<void>(`/api/v1/categories/${parentId}/children`, body);
+  await api.post<void>(`/categories/${parentId}/children`, body);
 }
 
-/** PATCH /api/v1/categories/{id}/rename */
+/** PATCH /categories/{id}/rename */
 export async function renameCategory(id: string, body: RenameRequest): Promise<void> {
-  await api.patch<void>(`/api/v1/categories/${id}/rename`, body);
+  await api.patch<void>(`/categories/${id}/rename`, body);
 }
 
-/** PATCH /api/v1/categories/{id}/move */
+/** PATCH /categories/{id}/move */
 export async function moveCategory(id: string, body: MoveRequest): Promise<void> {
-  await api.patch<void>(`/api/v1/categories/${id}/move`, body);
+  await api.patch<void>(`/categories/${id}/move`, body);
 }
 
-/** DELETE /api/v1/categories/{id} */
+/** DELETE /categories/{id} */
 export async function deleteCategory(id: string): Promise<void> {
-  await api.del<void>(`/api/v1/categories/${id}`);
+  await api.del<void>(`/categories/${id}`);
 }

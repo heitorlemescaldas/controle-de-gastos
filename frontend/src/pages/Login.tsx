@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 
 export default function LoginPage() {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -16,7 +16,7 @@ export default function LoginPage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     try {
-      await login({ username, password });
+      await login({ email, password });
       toast({ title: "Login realizado" });
       navigate(from, { replace: true });
     } catch (err: any) {
@@ -29,8 +29,8 @@ export default function LoginPage() {
       <form onSubmit={onSubmit} className="w-full max-w-sm space-y-4">
         <h1 className="text-2xl font-semibold">Entrar</h1>
         <div className="space-y-2">
-          <label className="text-sm">Usuário</label>
-          <Input value={username} onChange={e => setUsername(e.target.value)} placeholder="seu usuário" />
+          <label className="text-sm">E-mail</label>
+          <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="seu@email.com" />
         </div>
         <div className="space-y-2">
           <label className="text-sm">Senha</label>

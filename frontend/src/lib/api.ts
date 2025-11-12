@@ -19,7 +19,7 @@ export class ApiError extends Error {
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 type RequestOptions = Omit<RequestInit, "method" | "body" | "headers"> & {
-  auth?: boolean;
+  auth?: boolean; // default: true
   body?: unknown;
   headers?: Record<string, string>;
 };
@@ -29,7 +29,7 @@ function extractSubFromJwt(token: string | null): string | null {
   try {
     const payload = token.split(".")[1];
     const json = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
-    return json?.sub ?? null;
+    return json?.sub ?? null; // nosso backend usa "sub" = email
   } catch {
     return null;
   }
@@ -46,7 +46,7 @@ function buildHeaders(auth: boolean, extra?: Record<string, string>) {
     if (token) headers.Authorization = `Bearer ${token}`;
 
     const sub = extractSubFromJwt(token);
-    if (sub) headers["X-User"] = sub;
+    if (sub) headers["X-User"] = sub; // obrigatório para os endpoints protegidos
   }
   return headers;
 }
@@ -57,6 +57,7 @@ async function handleResponse<T>(res: Response): Promise<T> {
   const body = isJson ? await res.json().catch(() => null) : await res.text().catch(() => null);
 
   if (res.ok) {
+    // retorna body se JSON; se não, undefined
     return (isJson ? (body as T) : (undefined as unknown as T));
   }
 
@@ -81,7 +82,9 @@ async function handleResponse<T>(res: Response): Promise<T> {
 async function request<T>(method: HttpMethod, path: string, options: RequestOptions = {}) {
   const { auth = true, body, headers: extraHeaders, ...rest } = options;
 
-  const url = `${BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
+  // path SEM /api/v1 — já está no BASE_URL
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  const url = `${BASE_URL}${normalizedPath}`;
 
   const init: RequestInit = {
     method,
@@ -97,7 +100,6 @@ async function request<T>(method: HttpMethod, path: string, options: RequestOpti
   return handleResponse<T>(res);
 }
 
-// Helpers verbais
 export const api = {
   get:   <T>(path: string, options?: RequestOptions) => request<T>("GET", path, options),
   post:  <T>(path: string, body?: unknown, options?: RequestOptions) =>
@@ -109,8 +111,53 @@ export const api = {
   del:   <T>(path: string, options?: RequestOptions) => request<T>("DELETE", path, options),
 };
 
-// Pequenos atalhos úteis durante dev
+// Atalhos comuns da nossa API (paths SEM /api/v1)
+export const authApi = {
+  register: (payload: { email: string; password: string }) =>
+    api.post<void>("/register", payload, { auth: false }),
+  login: (payload: { email: string; password: string }) =>
+    api.post<{ token: string }>("/authenticate", payload, { auth: false }),
+};
+
+export const categoryApi = {
+  list: () => api.get<any[]>("/categories"),
+  createRoot: (name: string) => api.post<any>("/categories", { name }),
+  createChild: (parentId: string, name: string) =>
+    api.post<any>(`/categories/${parentId}/children`, { name }),
+  rename: (id: string, newName: string) =>
+    api.patch<void>(`/categories/${id}/rename`, { newName }),
+  move: (id: string, newParentId: string) =>
+    api.patch<void>(`/categories/${id}/move`, { newParentId }),
+  remove: (id: string) => api.del<void>(`/categories/${id}`),
+};
+
+export const expenseApi = {
+  create: (payload: {
+    amount: number | string;
+    type: "DEBIT" | "CREDIT";
+    description: string;
+    timestamp: string; // use new Date().toISOString()
+    categoryId?: string;
+  }) => api.post<any>("/expenses", payload),
+};
+
+export const reportApi = {
+  byPeriod: (startIso: string, endIso: string) =>
+    api.get<any>(`/reports/period?start=${encodeURIComponent(startIso)}&end=${encodeURIComponent(endIso)}`),
+  byCategoryTree: (startIso: string, endIso: string, rootCategoryId: string) =>
+    api.get<any>(`/reports/category-tree?start=${encodeURIComponent(startIso)}&end=${encodeURIComponent(endIso)}&rootCategoryId=${encodeURIComponent(rootCategoryId)}`),
+};
+
+export const goalApi = {
+  setMonthly: (payload: { rootCategoryId: string; month: string; limit: number | string }) =>
+    api.post<any>("/goals", payload),
+  evaluate: (rootCategoryId: string, month: string) =>
+    api.get<any>(`/goals/evaluate?rootCategoryId=${encodeURIComponent(rootCategoryId)}&month=${encodeURIComponent(month)}`),
+};
+
+// teste simples
 export async function pingHello(): Promise<string> {
-  const res = await api.get<string>("/api/v1/hello", { auth: true });
+  // path sem /api/v1
+  const res = await api.get<string>("/hello");
   return res;
 }

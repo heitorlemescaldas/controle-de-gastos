@@ -8,10 +8,11 @@ O foco é aplicar **boas práticas de arquitetura**, **testes automatizados** e 
 ## 🧠 Visão Geral
 
 A aplicação permite:
-- Registro e autenticação de usuários com JWT  
-- Criação e organização hierárquica de categorias de gastos  
-- Registro de despesas e metas mensais  
-- Geração de relatórios por período e por categoria  
+- Registro e autenticação de usuários com JWT
+- Criação e organização hierárquica de categorias de gastos (com subcategorias)
+- Registro de despesas e receitas
+- Definição e acompanhamento de metas mensais por categoria
+- Geração de relatórios por período e por árvore de categorias 
 
 ---
 
@@ -61,26 +62,20 @@ Caso queira expor na rede local:
 npm run dev:host
 ```
 
-🧪 Testes
-
-Executar todos os testes automatizados (frontend):
-
-```bash
-npm run test
-```
-
 🔐 Endpoints Principais (Swagger)
 
 | Método   | Rota                                     | Descrição                      |
 | -------- | ---------------------------------------- | ------------------------------ |
 | `POST`   | `/api/v1/register`                       | Registro de novo usuário       |
-| `POST`   | `/api/v1/authenticate`                   | Autenticação e retorno de JWT  |
+| `POST`   | `/api/v1/authenticate`                   | Autenticação e retorno do JWT  |
 | `GET`    | `/api/v1/categories`                     | Lista de categorias do usuário |
 | `POST`   | `/api/v1/categories`                     | Cria categoria raiz            |
+| `POST`   | `/api/v1/categories/{parentId}/children` | Cria subcategoria              |
 | `PATCH`  | `/api/v1/categories/{id}/rename`         | Renomeia categoria             |
 | `PATCH`  | `/api/v1/categories/{id}/move`           | Move categoria para outro pai  |
 | `DELETE` | `/api/v1/categories/{id}`                | Exclui categoria               |
-| `POST`   | `/api/v1/categories/{parentId}/children` | Cria subcategoria              |
-| `POST`   | `/api/v1/expenses`                       | Registra uma despesa           |
+| `POST`   | `/api/v1/expenses`                       | Registra despesa ou receita    |
+| `POST`   | `/api/v1/goals`                          | Define meta mensal             |
 | `GET`    | `/api/v1/goals/evaluate`                 | Avalia meta mensal             |
-
+| `GET`    | `/api/v1/reports/period`                 | Gera relatório por período     |
+| `GET`    | `/api/v1/reports/category-tree`          | Gera relatório por categoria   |
