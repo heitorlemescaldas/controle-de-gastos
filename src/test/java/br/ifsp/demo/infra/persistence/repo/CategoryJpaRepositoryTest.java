@@ -1,0 +1,142 @@
+package br.ifsp.demo.infra.persistence.repo;
+
+import br.ifsp.demo.domain.model.CategoryNode;
+import br.ifsp.demo.infra.persistence.entity.CategoryEntity;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+
+import java.util.Optional;
+import java.util.stream.Stream;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+@DataJpaTest
+@DisplayName("CategoryJpaRepository Integration Tests for findNodeById")
+public class CategoryJpaRepositoryTest {
+
+    @Autowired
+    private CategoryJpaRepository repository;
+
+    @Autowired
+    private TestEntityManager entityManager;
+
+    private static final String USER_ID_1 = "user-123";
+    private static final String USER_ID_2 = "user-456";
+
+    private CategoryEntity category1;
+    private CategoryEntity category2;
+
+    @BeforeEach
+    void setup() {
+        category1 = new CategoryEntity("cat-1", USER_ID_1, "Electronics", null, "Electronics");
+        entityManager.persist(category1);
+
+        category2 = new CategoryEntity("cat-2", USER_ID_2, "Tools", null, "Tools");
+        entityManager.persist(category2);
+
+        entityManager.flush();
+        entityManager.clear();
+    }
+
+    @AfterEach
+    void tearDown() {
+        entityManager.getEntityManager().createQuery("DELETE FROM CategoryEntity").executeUpdate();
+        entityManager.flush();
+        entityManager.clear();
+    }
+
+    private static Stream<String> provideInvalidStrings() {
+        return Stream.of(
+                null,
+                "",
+                " ",
+                " \t\n "
+        );
+    }
+
+    private static Stream<String> provideCommonInvalidValues() {
+        return Stream.of(
+                null,
+                "",
+                " "
+        );
+    }
+
+    @Tag("IntegrationTest")
+    @Tag("PersistenceTest")
+    @Test
+    @DisplayName("Should Return Category Node When Exists And Matches User Id")
+    void shouldReturnCategoryNodeWhenExistsAndMatchesUserId() {
+        Optional<CategoryNode> foundNode = repository.findNodeById(category1.getId(), USER_ID_1);
+
+        assertThat(foundNode).isPresent();
+        CategoryNode node = foundNode.get();
+        assertThat(node.id()).isEqualTo(category1.getId());
+        assertThat(node.userId()).isEqualTo(USER_ID_1);
+        assertThat(node.name()).isEqualTo("Electronics");
+        assertThat(node.parentId()).isNull();
+        assertThat(node.path()).isEqualTo("Electronics");
+        assertThat(node).isInstanceOf(CategoryNode.class);
+    }
+
+    @Tag("IntegrationTest")
+    @Tag("PersistenceTest")
+    @Test
+    @DisplayName("Should Return Empty Optional When Node Does Not Exist")
+    void shouldReturnEmptyOptionalWhenNodeDoesNotExist() {
+        String nonExistentId = "non-existent-id";
+
+        Optional<CategoryNode> foundNode = repository.findNodeById(nonExistentId, USER_ID_1);
+
+        assertThat(foundNode).isEmpty();
+    }
+
+    @Tag("IntegrationTest")
+    @Tag("PersistenceTest")
+    @Test
+    @DisplayName("Should Return Empty Optional When Node Exists But User Id Does Not Match (Security Check)")
+    void shouldReturnEmptyOptionalWhenNodeExistsButUserIdDoesNotMatch() {
+        String wrongUserId = USER_ID_1;
+
+        Optional<CategoryNode> foundNode = repository.findNodeById(category2.getId(), wrongUserId);
+
+        assertThat(foundNode).isEmpty();
+    }
+
+    @Tag("IntegrationTest")
+    @Tag("PersistenceTest")
+    @ParameterizedTest(name = "[Invalid ID] ID={0}")
+    @MethodSource("provideInvalidStrings")
+    @DisplayName("Should Return Empty Optional when Category ID is Invalid (null, empty, or blank)")
+    void shouldReturnEmptyOptionalWhenIdIsInvalid(String invalidId) {
+        Optional<CategoryNode> foundNode = repository.findNodeById(invalidId, USER_ID_1);
+
+        assertThat(foundNode).isEmpty();
+    }
+
+    @Tag("IntegrationTest")
+    @Tag("PersistenceTest")
+    @ParameterizedTest(name = "[Invalid User ID] User ID={0}")
+    @MethodSource("provideInvalidStrings")
+    @DisplayName("Should Return Empty Optional when User ID is Invalid (null, empty, or blank)")
+    void shouldReturnEmptyOptionalWhenUserIdIsInvalid(String invalidUserId) {
+        Optional<CategoryNode> foundNode = repository.findNodeById(category1.getId(), invalidUserId);
+
+        assertThat(foundNode).isEmpty();
+    }
+
+    @Tag("IntegrationTest")
+    @Tag("PersistenceTest")
+    @ParameterizedTest(name = "[Both Invalid] ID={0} and User ID={1}")
+    @MethodSource("provideCommonInvalidValues")
+    @DisplayName("Should Return Empty Optional when both Category ID and User ID are Invalid (matching null/empty/blank)")
+    void shouldReturnEmptyOptionalWhenIdAndUserIdAreInvalid(String invalidValue) {
+        Optional<CategoryNode> foundNode = repository.findNodeById(invalidValue, invalidValue);
+
+        assertThat(foundNode).isEmpty();
+    }
+}
