@@ -143,4 +143,38 @@ public class CategoryJpaRepositoryTest {
             assertThat(foundNode).isEmpty();
         }
     }
+
+    @Nested
+    @DisplayName("findAllOrdered Tests")
+    class FindAllOrderedTests {
+
+        @Test
+        @DisplayName("Should return all categories ordered by path for given user")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldReturnAllCategoriesOrderedByPathForUser() {
+            CategoryEntity child1 = new CategoryEntity("c1", USER_ID_1, "Phones", "cat-1", "Electronics/Phones");
+            CategoryEntity child2 = new CategoryEntity("c2", USER_ID_1, "Laptops", "cat-1", "Electronics/Laptops");
+            entityManager.persist(child1);
+            entityManager.persist(child2);
+            entityManager.flush();
+            entityManager.clear();
+
+            var list = repository.findAllOrdered(USER_ID_1);
+
+            assertThat(list).hasSize(3);
+            assertThat(list.get(0).getPath()).isEqualTo("Electronics");
+            assertThat(list.get(1).getPath()).isEqualTo("Electronics/Laptops");
+            assertThat(list.get(2).getPath()).isEqualTo("Electronics/Phones");
+        }
+
+        @Test
+        @DisplayName("Should return empty list when user has no categories")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldReturnEmptyListWhenUserHasNoCategories() {
+            var list = repository.findAllOrdered("another-user");
+            assertThat(list).isEmpty();
+        }
+    }
 }
