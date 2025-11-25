@@ -264,4 +264,46 @@ public class CategoryJpaRepositoryTest {
             assertThat(updated).isEqualTo(0);
         }
     }
+
+    @Nested
+    @DisplayName("existsByUserAndPath Tests")
+    class ExistsByUserAndPathTests {
+
+        private static Stream<String> provideInvalidStrings() {
+            return Stream.of(
+                    null,
+                    "",
+                    " ",
+                    " \t\n "
+            );
+        }
+
+        @Test
+        @DisplayName("Should return true when path exists and user matches")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldReturnTrueWhenExists() {
+            boolean exists = repository.existsByUserAndPath(USER_ID_1, "Electronics");
+            assertThat(exists).isTrue();
+        }
+
+        @Test
+        @DisplayName("Should return false when path exists but userId does not match")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldReturnFalseWhenUserDoesNotMatch() {
+            boolean exists = repository.existsByUserAndPath(USER_ID_2, "Electronics");
+            assertThat(exists).isFalse();
+        }
+
+        @ParameterizedTest
+        @MethodSource("provideInvalidStrings")
+        @DisplayName("Should return false when path is invalid")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldReturnFalseWhenPathInvalid(String path) {
+            boolean exists = repository.existsByUserAndPath(USER_ID_1, path);
+            assertThat(exists).isFalse();
+        }
+    }
 }
