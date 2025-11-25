@@ -177,4 +177,45 @@ public class CategoryJpaRepositoryTest {
             assertThat(list).isEmpty();
         }
     }
+
+    @Nested
+    @DisplayName("rename Tests")
+    class RenameTests {
+
+        @Test
+        @DisplayName("Should rename category when id and user match")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldRenameWhenValid() {
+            int updated = repository.rename(category1.getId(), USER_ID_1, "NewName", "NewName");
+            entityManager.flush();
+            entityManager.clear();
+
+            assertThat(updated).isEqualTo(1);
+
+            CategoryEntity updatedEntity =
+                    entityManager.find(CategoryEntity.class, category1.getId());
+
+            assertThat(updatedEntity.getName()).isEqualTo("NewName");
+            assertThat(updatedEntity.getPath()).isEqualTo("NewName");
+        }
+
+        @Test
+        @DisplayName("Should NOT rename when userId does not match")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldNotRenameWhenUserDoesNotMatch() {
+            int updated = repository.rename(category1.getId(), USER_ID_2, "X", "X");
+            assertThat(updated).isEqualTo(0);
+        }
+
+        @Test
+        @DisplayName("Should NOT rename when id does not exist")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldNotRenameWhenIdDoesNotExist() {
+            int updated = repository.rename("invalid-id", USER_ID_1, "X", "X");
+            assertThat(updated).isEqualTo(0);
+        }
+    }
 }
