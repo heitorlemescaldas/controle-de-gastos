@@ -15,7 +15,7 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
-@DisplayName("CategoryJpaRepository Integration Tests for findNodeById")
+@DisplayName("CategoryJpaRepository Integration Tests")
 public class CategoryJpaRepositoryTest {
 
     @Autowired
@@ -49,94 +49,98 @@ public class CategoryJpaRepositoryTest {
         entityManager.clear();
     }
 
-    private static Stream<String> provideInvalidStrings() {
-        return Stream.of(
-                null,
-                "",
-                " ",
-                " \t\n "
-        );
-    }
+    @Nested
+    @DisplayName("findNodeById Tests")
+    class FindNodeByIdTests {
 
-    private static Stream<String> provideCommonInvalidValues() {
-        return Stream.of(
-                null,
-                "",
-                " "
-        );
-    }
+        private static Stream<String> provideInvalidStrings() {
+            return Stream.of(
+                    null,
+                    "",
+                    " ",
+                    " \t\n "
+            );
+        }
 
-    @Tag("IntegrationTest")
-    @Tag("PersistenceTest")
-    @Test
-    @DisplayName("Should Return Category Node When Exists And Matches User Id")
-    void shouldReturnCategoryNodeWhenExistsAndMatchesUserId() {
-        Optional<CategoryNode> foundNode = repository.findNodeById(category1.getId(), USER_ID_1);
+        private static Stream<String> provideCommonInvalidValues() {
+            return Stream.of(
+                    null,
+                    "",
+                    " "
+            );
+        }
 
-        assertThat(foundNode).isPresent();
-        CategoryNode node = foundNode.get();
-        assertThat(node.id()).isEqualTo(category1.getId());
-        assertThat(node.userId()).isEqualTo(USER_ID_1);
-        assertThat(node.name()).isEqualTo("Electronics");
-        assertThat(node.parentId()).isNull();
-        assertThat(node.path()).isEqualTo("Electronics");
-        assertThat(node).isInstanceOf(CategoryNode.class);
-    }
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        @Test
+        @DisplayName("Should Return Category Node When Exists And Matches User Id")
+        void shouldReturnCategoryNodeWhenExistsAndMatchesUserId() {
+            Optional<CategoryNode> foundNode = repository.findNodeById(category1.getId(), USER_ID_1);
 
-    @Tag("IntegrationTest")
-    @Tag("PersistenceTest")
-    @Test
-    @DisplayName("Should Return Empty Optional When Node Does Not Exist")
-    void shouldReturnEmptyOptionalWhenNodeDoesNotExist() {
-        String nonExistentId = "non-existent-id";
+            assertThat(foundNode).isPresent();
+            CategoryNode node = foundNode.get();
+            assertThat(node.id()).isEqualTo(category1.getId());
+            assertThat(node.userId()).isEqualTo(USER_ID_1);
+            assertThat(node.name()).isEqualTo("Electronics");
+            assertThat(node.parentId()).isNull();
+            assertThat(node.path()).isEqualTo("Electronics");
+            assertThat(node).isInstanceOf(CategoryNode.class);
+        }
 
-        Optional<CategoryNode> foundNode = repository.findNodeById(nonExistentId, USER_ID_1);
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        @Test
+        @DisplayName("Should Return Empty Optional When Node Does Not Exist")
+        void shouldReturnEmptyOptionalWhenNodeDoesNotExist() {
+            String nonExistentId = "non-existent-id";
 
-        assertThat(foundNode).isEmpty();
-    }
+            Optional<CategoryNode> foundNode = repository.findNodeById(nonExistentId, USER_ID_1);
 
-    @Tag("IntegrationTest")
-    @Tag("PersistenceTest")
-    @Test
-    @DisplayName("Should Return Empty Optional When Node Exists But User Id Does Not Match (Security Check)")
-    void shouldReturnEmptyOptionalWhenNodeExistsButUserIdDoesNotMatch() {
-        String wrongUserId = USER_ID_1;
+            assertThat(foundNode).isEmpty();
+        }
 
-        Optional<CategoryNode> foundNode = repository.findNodeById(category2.getId(), wrongUserId);
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        @Test
+        @DisplayName("Should Return Empty Optional When Node Exists But User Id Does Not Match (Security Check)")
+        void shouldReturnEmptyOptionalWhenNodeExistsButUserIdDoesNotMatch() {
 
-        assertThat(foundNode).isEmpty();
-    }
+            Optional<CategoryNode> foundNode = repository.findNodeById(category2.getId(), USER_ID_1);
 
-    @Tag("IntegrationTest")
-    @Tag("PersistenceTest")
-    @ParameterizedTest(name = "[Invalid ID] ID={0}")
-    @MethodSource("provideInvalidStrings")
-    @DisplayName("Should Return Empty Optional when Category ID is Invalid (null, empty, or blank)")
-    void shouldReturnEmptyOptionalWhenIdIsInvalid(String invalidId) {
-        Optional<CategoryNode> foundNode = repository.findNodeById(invalidId, USER_ID_1);
+            assertThat(foundNode).isEmpty();
+        }
 
-        assertThat(foundNode).isEmpty();
-    }
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        @ParameterizedTest(name = "[Invalid ID] ID={0}")
+        @MethodSource("provideInvalidStrings")
+        @DisplayName("Should Return Empty Optional when Category ID is Invalid (null, empty, or blank)")
+        void shouldReturnEmptyOptionalWhenIdIsInvalid(String invalidId) {
+            Optional<CategoryNode> foundNode = repository.findNodeById(invalidId, USER_ID_1);
 
-    @Tag("IntegrationTest")
-    @Tag("PersistenceTest")
-    @ParameterizedTest(name = "[Invalid User ID] User ID={0}")
-    @MethodSource("provideInvalidStrings")
-    @DisplayName("Should Return Empty Optional when User ID is Invalid (null, empty, or blank)")
-    void shouldReturnEmptyOptionalWhenUserIdIsInvalid(String invalidUserId) {
-        Optional<CategoryNode> foundNode = repository.findNodeById(category1.getId(), invalidUserId);
+            assertThat(foundNode).isEmpty();
+        }
 
-        assertThat(foundNode).isEmpty();
-    }
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        @ParameterizedTest(name = "[Invalid User ID] User ID={0}")
+        @MethodSource("provideInvalidStrings")
+        @DisplayName("Should Return Empty Optional when User ID is Invalid (null, empty, or blank)")
+        void shouldReturnEmptyOptionalWhenUserIdIsInvalid(String invalidUserId) {
+            Optional<CategoryNode> foundNode = repository.findNodeById(category1.getId(), invalidUserId);
 
-    @Tag("IntegrationTest")
-    @Tag("PersistenceTest")
-    @ParameterizedTest(name = "[Both Invalid] ID={0} and User ID={1}")
-    @MethodSource("provideCommonInvalidValues")
-    @DisplayName("Should Return Empty Optional when both Category ID and User ID are Invalid (matching null/empty/blank)")
-    void shouldReturnEmptyOptionalWhenIdAndUserIdAreInvalid(String invalidValue) {
-        Optional<CategoryNode> foundNode = repository.findNodeById(invalidValue, invalidValue);
+            assertThat(foundNode).isEmpty();
+        }
 
-        assertThat(foundNode).isEmpty();
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        @ParameterizedTest(name = "[Both Invalid] ID={0} and User ID={1}")
+        @MethodSource("provideCommonInvalidValues")
+        @DisplayName("Should Return Empty Optional when both Category ID and User ID are Invalid (matching null/empty/blank)")
+        void shouldReturnEmptyOptionalWhenIdAndUserIdAreInvalid(String invalidValue) {
+            Optional<CategoryNode> foundNode = repository.findNodeById(invalidValue, invalidValue);
+
+            assertThat(foundNode).isEmpty();
+        }
     }
 }
