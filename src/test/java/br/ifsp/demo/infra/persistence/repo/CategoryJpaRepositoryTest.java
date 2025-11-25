@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -215,6 +216,51 @@ public class CategoryJpaRepositoryTest {
         @Tag("PersistenceTest")
         void shouldNotRenameWhenIdDoesNotExist() {
             int updated = repository.rename("invalid-id", USER_ID_1, "X", "X");
+            assertThat(updated).isEqualTo(0);
+        }
+    }
+
+    @Nested
+    @DisplayName("updatePathPrefix Tests")
+    class UpdatePathPrefixTests {
+
+        @Test
+        @DisplayName("Should update prefix of all paths for user")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldUpdatePrefixCorrectly() {
+            CategoryEntity child = new CategoryEntity(
+                    "child-1", USER_ID_1, "Phones", "cat-1",
+                    "Electronics/Phones");
+            entityManager.persist(child);
+            entityManager.flush();
+            entityManager.clear();
+
+            int updated = repository.updatePathPrefix(
+                    USER_ID_1,
+                    "Electronics",
+                    "Elec"
+            );
+
+            assertThat(updated).isEqualTo(2);
+
+            List<CategoryEntity> categories =
+                    repository.findAllOrdered(USER_ID_1);
+
+            assertThat(categories.get(0).getPath()).isEqualTo("Elec");
+            assertThat(categories.get(1).getPath()).isEqualTo("Elec/Phones");
+        }
+
+        @Test
+        @DisplayName("Should not update anything if prefix does not match")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldNotUpdateWhenPrefixDoesNotMatch() {
+            int updated = repository.updatePathPrefix(
+                    USER_ID_1,
+                    "WrongPrefix",
+                    "AAA"
+            );
             assertThat(updated).isEqualTo(0);
         }
     }
