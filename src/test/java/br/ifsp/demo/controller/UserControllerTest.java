@@ -1,6 +1,7 @@
 package br.ifsp.demo.controller;
 
 import br.ifsp.demo.security.auth.RegisterUserRequest;
+import br.ifsp.demo.security.auth.RegisterUserResponse;
 import com.github.javafaker.Faker;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
@@ -26,11 +27,20 @@ public class UserControllerTest {
 
     @Nested
     class RegisterEndpointTest{
+        private RegisterUserRequest registerUserRequest;
+
         @BeforeEach
         public void setUp() {
             RestAssured.baseURI = "http://localhost";
             RestAssured.port = port;
             RestAssured.basePath = "/api/v1/register";
+
+            String email = faker.internet().emailAddress();
+            String password = faker.internet().password(8, 12, true, true);
+            String firstName = faker.name().firstName();
+            String lastName = faker.name().lastName();
+
+            registerUserRequest = new RegisterUserRequest(email, password, firstName, lastName);
         }
 
         @Tag("ApiTest")
@@ -38,16 +48,10 @@ public class UserControllerTest {
         @Test
         @DisplayName("Should a post to register with valid inputs return 201.")
         void shouldAPostToRegisterWithValidInputsReturn201(){
-            String email = faker.internet().emailAddress();
-            String password = faker.internet().password(8, 12, true, true);
-            String firstName = faker.name().firstName();
-            String lastName = faker.name().lastName();
-
-            var registerRequest = new RegisterUserRequest(email, password, firstName, lastName);
 
             given()
             .contentType(ContentType.JSON)
-            .body(registerRequest)
+            .body(registerUserRequest)
             .when()
             .post()
             .then()
