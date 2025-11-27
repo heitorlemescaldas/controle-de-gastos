@@ -13,6 +13,7 @@ import org.springframework.test.context.ActiveProfiles;
 import java.util.Locale;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -23,7 +24,12 @@ public class UserControllerTest {
     @LocalServerPort
     private int port;
 
-    private Faker faker = new Faker(new Locale("pt", "BR"));
+    private final Faker faker = new Faker(new Locale("pt", "BR"));
+    private String email;
+    private String password;
+    private String firstName;
+    private String lastName;
+
 
     @Nested
     class RegisterEndpointTest{
@@ -34,13 +40,12 @@ public class UserControllerTest {
             RestAssured.baseURI = "http://localhost";
             RestAssured.port = port;
             RestAssured.basePath = "/api/v1/register";
+            email = faker.internet().emailAddress();
+            password = faker.internet().password(8, 12, true, true);
+            firstName = faker.name().firstName();
+            lastName = faker.name().lastName();
 
-            String email = faker.internet().emailAddress();
-            String password = faker.internet().password(8, 12, true, true);
-            String firstName = faker.name().firstName();
-            String lastName = faker.name().lastName();
-
-            registerUserRequest = new RegisterUserRequest(email, password, firstName, lastName);
+            registerUserRequest = new RegisterUserRequest(firstName, lastName, email, password);
         }
 
         @Tag("ApiTest")
@@ -57,6 +62,33 @@ public class UserControllerTest {
             .then()
             .statusCode(201)
             .body("id", notNullValue());
+        }
+
+        @Tag("ApiTest")
+        @Tag("IntegrationTest")
+        @Test
+        @DisplayName("Should post to register return 409 when email is already in use.")
+        void shouldAPostToRegisterReturn409WhenEmailIsAlreadyInUse(){
+
+            String alreadyEmailExistsMessage = "Email already registered: " + email;
+
+            given()
+                    .contentType(ContentType.JSON)
+                    .body(registerUserRequest)
+                    .when()
+                    .post()
+                    .then()
+                    .statusCode(201);
+
+            given()
+                    .contentType(ContentType.JSON)
+                    .body(registerUserRequest)
+                    .when()
+                    .post()
+                    .then()
+                    .statusCode(409)
+                    .body("message",is(alreadyEmailExistsMessage))
+                    .body("status",is("CONFLICT"));
         }
     }
 }
