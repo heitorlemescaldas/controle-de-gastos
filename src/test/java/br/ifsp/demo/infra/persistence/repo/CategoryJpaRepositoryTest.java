@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -175,6 +176,134 @@ public class CategoryJpaRepositoryTest {
         void shouldReturnEmptyListWhenUserHasNoCategories() {
             var list = repository.findAllOrdered("another-user");
             assertThat(list).isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("rename Tests")
+    class RenameTests {
+
+        @Test
+        @DisplayName("Should rename category when id and user match")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldRenameWhenValid() {
+            int updated = repository.rename(category1.getId(), USER_ID_1, "NewName", "NewName");
+            entityManager.flush();
+            entityManager.clear();
+
+            assertThat(updated).isEqualTo(1);
+
+            CategoryEntity updatedEntity =
+                    entityManager.find(CategoryEntity.class, category1.getId());
+
+            assertThat(updatedEntity.getName()).isEqualTo("NewName");
+            assertThat(updatedEntity.getPath()).isEqualTo("NewName");
+        }
+
+        @Test
+        @DisplayName("Should NOT rename when userId does not match")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldNotRenameWhenUserDoesNotMatch() {
+            int updated = repository.rename(category1.getId(), USER_ID_2, "X", "X");
+            assertThat(updated).isEqualTo(0);
+        }
+
+        @Test
+        @DisplayName("Should NOT rename when id does not exist")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldNotRenameWhenIdDoesNotExist() {
+            int updated = repository.rename("invalid-id", USER_ID_1, "X", "X");
+            assertThat(updated).isEqualTo(0);
+        }
+    }
+
+    @Nested
+    @DisplayName("updatePathPrefix Tests")
+    class UpdatePathPrefixTests {
+
+        @Test
+        @DisplayName("Should update prefix of all paths for user")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldUpdatePrefixCorrectly() {
+            CategoryEntity child = new CategoryEntity(
+                    "child-1", USER_ID_1, "Phones", "cat-1",
+                    "Electronics/Phones");
+            entityManager.persist(child);
+            entityManager.flush();
+            entityManager.clear();
+
+            int updated = repository.updatePathPrefix(
+                    USER_ID_1,
+                    "Electronics",
+                    "Elec"
+            );
+
+            assertThat(updated).isEqualTo(2);
+
+            List<CategoryEntity> categories =
+                    repository.findAllOrdered(USER_ID_1);
+
+            assertThat(categories.get(0).getPath()).isEqualTo("Elec");
+            assertThat(categories.get(1).getPath()).isEqualTo("Elec/Phones");
+        }
+
+        @Test
+        @DisplayName("Should not update anything if prefix does not match")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldNotUpdateWhenPrefixDoesNotMatch() {
+            int updated = repository.updatePathPrefix(
+                    USER_ID_1,
+                    "WrongPrefix",
+                    "AAA"
+            );
+            assertThat(updated).isEqualTo(0);
+        }
+    }
+
+    @Nested
+    @DisplayName("existsByUserAndPath Tests")
+    class ExistsByUserAndPathTests {
+
+        private static Stream<String> provideInvalidStrings() {
+            return Stream.of(
+                    null,
+                    "",
+                    " ",
+                    " \t\n "
+            );
+        }
+
+        @Test
+        @DisplayName("Should return true when path exists and user matches")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldReturnTrueWhenExists() {
+            boolean exists = repository.existsByUserAndPath(USER_ID_1, "Electronics");
+            assertThat(exists).isTrue();
+        }
+
+        @Test
+        @DisplayName("Should return false when path exists but userId does not match")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldReturnFalseWhenUserDoesNotMatch() {
+            boolean exists = repository.existsByUserAndPath(USER_ID_2, "Electronics");
+            assertThat(exists).isFalse();
+        }
+
+        @ParameterizedTest
+        @MethodSource("provideInvalidStrings")
+        @DisplayName("Should return false when path is invalid")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldReturnFalseWhenPathInvalid(String path) {
+            boolean exists = repository.existsByUserAndPath(USER_ID_1, path);
+            assertThat(exists).isFalse();
         }
     }
 }
