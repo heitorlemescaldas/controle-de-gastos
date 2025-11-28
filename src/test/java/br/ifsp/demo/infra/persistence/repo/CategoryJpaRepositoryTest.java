@@ -306,4 +306,88 @@ public class CategoryJpaRepositoryTest {
             assertThat(exists).isFalse();
         }
     }
+
+    @Nested
+    @DisplayName("existsSiblingByNormalized Tests")
+    class ExistsSiblingByNormalizedTests {
+
+        private CategoryEntity parent;
+        private CategoryEntity sibling;
+
+        @BeforeEach
+        void setupNested() {
+            parent = new CategoryEntity("parent-1", USER_ID_1, "Root", null, "Root");
+            entityManager.persist(parent);
+
+            sibling = new CategoryEntity("sibling-1", USER_ID_1, "Category", parent.getId(), "Root/Category");
+            entityManager.persist(sibling);
+            entityManager.flush();
+            entityManager.clear();
+        }
+
+        @Test
+        @DisplayName("Should return true when sibling with normalized name exists under the same parent")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldReturnTrueWhenSiblingExists() {
+            boolean exists = repository.existsSiblingByNormalized(
+                    USER_ID_1,
+                    parent.getId(),
+                    "category"
+            );
+            assertThat(exists).isTrue();
+        }
+
+        @Test
+        @DisplayName("Should return true when sibling with normalized name exists under root (parentId is null)")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldReturnTrueWhenSiblingExistsUnderRoot() {
+            boolean exists = repository.existsSiblingByNormalized(
+                    USER_ID_1,
+                    null,
+                    "electronics"
+            );
+            assertThat(exists).isTrue();
+        }
+
+        @Test
+        @DisplayName("Should return false when sibling does not exist under the same parent")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldReturnFalseWhenSiblingDoesNotExist() {
+            boolean exists = repository.existsSiblingByNormalized(
+                    USER_ID_1,
+                    parent.getId(),
+                    "nonexistent"
+            );
+            assertThat(exists).isFalse();
+        }
+
+        @Test
+        @DisplayName("Should return false when sibling exists but user does not match")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldReturnFalseWhenUserDoesNotMatch() {
+            boolean exists = repository.existsSiblingByNormalized(
+                    USER_ID_2,
+                    parent.getId(),
+                    "category"
+            );
+            assertThat(exists).isFalse();
+        }
+
+        @Test
+        @DisplayName("Should return false when sibling exists but under a different parent")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldReturnFalseWhenSiblingUnderDifferentParent() {
+            boolean exists = repository.existsSiblingByNormalized(
+                    USER_ID_1,
+                    category1.getId(),
+                    "category"
+            );
+            assertThat(exists).isFalse();
+        }
+    }
 }
