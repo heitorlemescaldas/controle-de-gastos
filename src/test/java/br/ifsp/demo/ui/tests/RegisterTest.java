@@ -4,6 +4,7 @@ import br.ifsp.demo.ui.pages.LoginPage;
 import br.ifsp.demo.ui.pages.RegisterPage;
 import br.ifsp.demo.ui.util.BaseTest;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
@@ -31,6 +32,7 @@ public class RegisterTest extends BaseTest {
         return driver.findElement(toast).getText();
     }
 
+    @Tag("UiTest")
     @Test
     void testSuccessfulRegister() {
         RegisterPage registerPage = new RegisterPage(driver, wait);
@@ -44,6 +46,7 @@ public class RegisterTest extends BaseTest {
         assertThat(toast).isNotEmpty();
     }
 
+    @Tag("UiTest")
     @Test
     void testRegisterWithEmptyFieldsShowsError() {
         RegisterPage registerPage = new RegisterPage(driver, wait);
@@ -61,6 +64,7 @@ public class RegisterTest extends BaseTest {
         assertThat(driver.getCurrentUrl()).contains("/register");
     }
 
+    @Tag("UiTest")
     @Test
     void testDuplicateRegisterShowsError() {
         String uniqueEmail = "duplicate.test+" + System.currentTimeMillis() + "@example.com";
@@ -83,6 +87,7 @@ public class RegisterTest extends BaseTest {
         assertThat(driver.getCurrentUrl()).contains("/register");
     }
 
+    @Tag("UiTest")
     @Test
     void testRegisterThenLogin() {
         RegisterPage registerPage = new RegisterPage(driver, wait);
