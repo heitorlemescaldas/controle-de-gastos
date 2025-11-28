@@ -28,6 +28,13 @@ public class HomePage extends BasePage {
     private final By moveParentSelectTrigger = By.xpath("//div[label[text()='Mover “Selecionada” para dentro de…']]//button[@role='combobox']");
     private final By moveButton = By.xpath("//button[contains(., 'Mover')]");
 
+    private final By goalsSection = By.xpath("//h2[contains(text(),'Metas') or contains(text(),'Metas de Gastos')]");
+    private final By goalRootSelectTrigger = By.xpath("//div[label[contains(text(),'Categoria raiz')]]//button[@role='combobox']");
+    private final By goalMonthInput = By.xpath("//label[contains(text(), 'Mês (YYYY-MM)')]/following::input[1]");
+    private final By goalLimitInput = By.xpath("//label[contains(text(),'Limite')]/following::input[1]");
+    private final By goalSaveButton = By.xpath("//button[contains(., 'Definir') or contains(., 'Ajustar')]");
+    private final By goalLimitValue = By.xpath("//div[contains(text(),'Limite')]/span");
+
     public HomePage(WebDriver driver, WebDriverWait wait) {
         super(driver, wait);
     }
@@ -100,5 +107,22 @@ public class HomePage extends BasePage {
         } catch (InterruptedException e) {
             // ignore
         }
+    }
+
+    public void openGoalsSection() {
+        scrollToElement(goalsSection);
+    }
+
+    public void createGoal(String rootCategoryName, String month, String limit) {
+        openGoalsSection();
+        selectOption(goalRootSelectTrigger, rootCategoryName);
+        type(goalMonthInput, month);
+        type(goalLimitInput, limit);
+        click(goalSaveButton);
+    }
+
+    public String getDisplayedGoalLimit() {
+        wait.until(ExpectedConditions.visibilityOfElementLocated(goalLimitValue));
+        return driver.findElement(goalLimitValue).getText();
     }
 }
