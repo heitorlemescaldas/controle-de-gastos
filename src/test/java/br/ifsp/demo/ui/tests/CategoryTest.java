@@ -66,7 +66,7 @@ public class CategoryTest extends BaseTest {
         homePage = new HomePage(driver, wait);
     }
 
-    @Tag("CategoryTest")
+    @Tag("UiTest")
     @Test
     void testCreateRootCategorySuccessfully() {
         String categoryName = faker.commerce().productName() + " " + System.currentTimeMillis();
@@ -77,7 +77,7 @@ public class CategoryTest extends BaseTest {
         homePage.selectCategoryForAction(categoryName);
     }
 
-    @Tag("CategoryTest")
+    @Tag("UiTest")
     @Test
     void testCreateChildCategorySuccessfully() {
         String rootName = "Root " + System.currentTimeMillis();
@@ -92,7 +92,7 @@ public class CategoryTest extends BaseTest {
         homePage.selectCategoryForAction(rootName + "/" + childName);
     }
 
-    @Tag("CategoryTest")
+    @Tag("UiTest")
     @Test
     void testRenameCategorySuccessfully() {
         String originalName = "RenameMe " + System.currentTimeMillis();
@@ -108,7 +108,7 @@ public class CategoryTest extends BaseTest {
         homePage.selectCategoryForAction(newName);
     }
 
-    @Tag("CategoryTest")
+    @Tag("UiTest")
     @Test
     void testDeleteCategorySuccessfully() {
         String categoryToDelete = "DeleteMe " + System.currentTimeMillis();
@@ -128,7 +128,7 @@ public class CategoryTest extends BaseTest {
         }
     }
 
-    @Tag("CategoryTest")
+    @Tag("UiTest")
     @Test
     void testMoveCategorySuccessfully() {
         String categoryToMove = "ToMove " + System.currentTimeMillis();
