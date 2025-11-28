@@ -390,4 +390,59 @@ public class CategoryJpaRepositoryTest {
             assertThat(exists).isFalse();
         }
     }
+
+    @Nested
+    @DisplayName("hasChildren Tests")
+    class HasChildrenTests {
+
+        private CategoryEntity parent;
+        private CategoryEntity child;
+
+        @BeforeEach
+        void setupNested() {
+            parent = new CategoryEntity("parent-2", USER_ID_1, "Parent", null, "Parent");
+            entityManager.persist(parent);
+
+            child = new CategoryEntity("child-2", USER_ID_1, "Child", parent.getId(), "Parent/Child");
+            entityManager.persist(child);
+            entityManager.flush();
+            entityManager.clear();
+        }
+
+        @Test
+        @DisplayName("Should return true when category has children and user matches")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldReturnTrueWhenHasChildren() {
+            boolean hasChildren = repository.hasChildren(parent.getId(), USER_ID_1);
+            assertThat(hasChildren).isTrue();
+        }
+
+        @Test
+        @DisplayName("Should return false when category has no children")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldReturnFalseWhenHasNoChildren() {
+            boolean hasChildren = repository.hasChildren(category2.getId(), USER_ID_2);
+            assertThat(hasChildren).isFalse();
+        }
+
+        @Test
+        @DisplayName("Should return false when category exists but user does not match")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldReturnFalseWhenUserDoesNotMatch() {
+            boolean hasChildren = repository.hasChildren(parent.getId(), USER_ID_2);
+            assertThat(hasChildren).isFalse();
+        }
+
+        @Test
+        @DisplayName("Should return false when category id does not exist")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldReturnFalseWhenIdDoesNotExist() {
+            boolean hasChildren = repository.hasChildren("non-existent-id", USER_ID_1);
+            assertThat(hasChildren).isFalse();
+        }
+    }
 }
