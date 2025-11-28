@@ -445,4 +445,36 @@ public class CategoryJpaRepositoryTest {
             assertThat(hasChildren).isFalse();
         }
     }
+
+    @Nested
+    @DisplayName("findPath Tests")
+    class FindPathTests {
+
+        @Test
+        @DisplayName("Should return path when id and user match")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldReturnPathWhenValid() {
+            String path = repository.findPath(category1.getId(), USER_ID_1);
+            assertThat(path).isEqualTo(category1.getPath());
+        }
+
+        @Test
+        @DisplayName("Should return null when user does not match")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldReturnNullWhenUserDoesNotMatch() {
+            String path = repository.findPath(category1.getId(), USER_ID_2);
+            assertThat(path).isNull();
+        }
+
+        @Test
+        @DisplayName("Should return null when id does not exist")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldReturnNullWhenIdDoesNotExist() {
+            String path = repository.findPath("invalid-id", USER_ID_1);
+            assertThat(path).isNull();
+        }
+    }
 }
