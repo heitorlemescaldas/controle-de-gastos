@@ -32,7 +32,7 @@ public class UserControllerTest {
 
 
     @Nested
-    class RegisterEndpointTest{
+    class RegisterEndpointTest {
         private RegisterUserRequest registerUserRequest;
 
         @BeforeEach
@@ -52,48 +52,48 @@ public class UserControllerTest {
         @Tag("IntegrationTest")
         @Test
         @DisplayName("Should a post to register with valid inputs return 201.")
-        void shouldAPostToRegisterWithValidInputsReturn201(){
+        void shouldAPostToRegisterWithValidInputsReturn201() {
 
             given()
-            .contentType(ContentType.JSON)
-            .body(registerUserRequest)
-            .when()
-            .post()
-            .then()
-            .statusCode(201)
-            .body("id", notNullValue());
+                    .contentType(ContentType.JSON)
+                    .body(registerUserRequest)
+                    .when()
+                    .post()
+                    .then()
+                    .statusCode(201)
+                    .body("id", notNullValue());
         }
 
         @Tag("ApiTest")
         @Tag("IntegrationTest")
         @Test
         @DisplayName("Should post to register return 409 when email is already in use.")
-        void shouldAPostToRegisterReturn409WhenEmailIsAlreadyInUse(){
+        void shouldAPostToRegisterReturn409WhenEmailIsAlreadyInUse() {
 
             String alreadyEmailExistsMessage = "Email already registered: " + email;
 
             given()
-            .contentType(ContentType.JSON)
-            .body(registerUserRequest)
-            .when()
-            .post()
-            .then()
-            .statusCode(201);
+                    .contentType(ContentType.JSON)
+                    .body(registerUserRequest)
+                    .when()
+                    .post()
+                    .then()
+                    .statusCode(201);
 
             given()
-            .contentType(ContentType.JSON)
-            .body(registerUserRequest)
-            .when()
-            .post()
-            .then()
-            .statusCode(409)
-            .body("message",is(alreadyEmailExistsMessage))
-            .body("status",is("CONFLICT"));
+                    .contentType(ContentType.JSON)
+                    .body(registerUserRequest)
+                    .when()
+                    .post()
+                    .then()
+                    .statusCode(409)
+                    .body("message", is(alreadyEmailExistsMessage))
+                    .body("status", is("CONFLICT"));
         }
     }
 
     @Nested
-    class AuthenticateEndpointTest{
+    class AuthenticateEndpointTest {
 
         @BeforeEach
         public void setUp() {
@@ -122,18 +122,18 @@ public class UserControllerTest {
         @Tag("IntegrationTest")
         @Test
         @DisplayName("Should a post to authenticate with valid credentials return 200.")
-        void shouldAPostToAuthenticateWithValidCredentialsReturn200(){
+        void shouldAPostToAuthenticateWithValidCredentialsReturn200() {
 
             var authRequest = new AuthRequest(email, password);
 
             given()
-            .contentType(ContentType.JSON)
-            .body(authRequest)
-            .when()
-            .post()
-            .then()
-            .statusCode(200)
-            .body("token", notNullValue());
+                    .contentType(ContentType.JSON)
+                    .body(authRequest)
+                    .when()
+                    .post()
+                    .then()
+                    .statusCode(200)
+                    .body("token", notNullValue());
 
         }
 
@@ -141,17 +141,17 @@ public class UserControllerTest {
         @Tag("IntegrationTest")
         @Test
         @DisplayName("Should a post to authenticate with invalid credentials return 401.")
-        void shouldAPostToAuthenticateWithValidCredentialsReturn401(){
+        void shouldAPostToAuthenticateWithValidCredentialsReturn401() {
 
             var invalidAuthRequest = new AuthRequest("somemail", "somePassWord");
 
             given()
-            .contentType(ContentType.JSON)
-            .body(invalidAuthRequest)
-            .when()
-            .post()
-            .then()
-            .statusCode(401);
+                    .contentType(ContentType.JSON)
+                    .body(invalidAuthRequest)
+                    .when()
+                    .post()
+                    .then()
+                    .statusCode(401);
 
         }
     }
