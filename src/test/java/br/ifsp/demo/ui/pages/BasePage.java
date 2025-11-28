@@ -1,7 +1,9 @@
 package br.ifsp.demo.ui.pages;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
@@ -28,7 +30,7 @@ public class BasePage {
     }
 
     protected void waitForVisibility(By locator) {
-        wait.until(ExpectedConditions.visibilityOfElementLocated(locator));
+        wait.until(ExpectedConditions.elementToBeClickable(locator));
     }
 
     protected By toastLocator() {
@@ -46,5 +48,10 @@ public class BasePage {
         WebDriverWait localWait = new WebDriverWait(driver, java.time.Duration.ofSeconds(timeoutSeconds));
         localWait.until(ExpectedConditions.textToBePresentInElementLocated(toastLocator(), expectedParte));
         return driver.findElement(toastLocator()).getText();
+    }
+
+    protected void scrollToElement(By locator) {
+        WebElement element = wait.until(ExpectedConditions.visibilityOfElementLocated(locator));
+        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(false);", element);
     }
 }
