@@ -1,7 +1,7 @@
 package br.ifsp.demo.controller;
 
+import br.ifsp.demo.security.auth.AuthRequest;
 import br.ifsp.demo.security.auth.RegisterUserRequest;
-import br.ifsp.demo.security.auth.RegisterUserResponse;
 import com.github.javafaker.Faker;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
@@ -73,22 +73,86 @@ public class UserControllerTest {
             String alreadyEmailExistsMessage = "Email already registered: " + email;
 
             given()
-                    .contentType(ContentType.JSON)
-                    .body(registerUserRequest)
-                    .when()
-                    .post()
-                    .then()
-                    .statusCode(201);
+            .contentType(ContentType.JSON)
+            .body(registerUserRequest)
+            .when()
+            .post()
+            .then()
+            .statusCode(201);
+
+            given()
+            .contentType(ContentType.JSON)
+            .body(registerUserRequest)
+            .when()
+            .post()
+            .then()
+            .statusCode(409)
+            .body("message",is(alreadyEmailExistsMessage))
+            .body("status",is("CONFLICT"));
+        }
+    }
+
+    @Nested
+    class AuthenticateEndpointTest{
+
+        @BeforeEach
+        public void setUp() {
+            RestAssured.baseURI = "http://localhost";
+            RestAssured.port = port;
+            RestAssured.basePath = "/api/v1/authenticate";
+            String apiBase = "http://localhost:" + port + "/api/v1";
+
+            email = faker.internet().emailAddress();
+            password = faker.internet().password(8, 12, true, true);
+            firstName = faker.name().firstName();
+            lastName = faker.name().lastName();
+
+            var registerUserRequest = new RegisterUserRequest(firstName, lastName, email, password);
 
             given()
                     .contentType(ContentType.JSON)
                     .body(registerUserRequest)
                     .when()
-                    .post()
+                    .post(apiBase + "/register")
                     .then()
-                    .statusCode(409)
-                    .body("message",is(alreadyEmailExistsMessage))
-                    .body("status",is("CONFLICT"));
+                    .statusCode(201);
+        }
+
+        @Tag("ApiTest")
+        @Tag("IntegrationTest")
+        @Test
+        @DisplayName("Should a post to authenticate with valid credentials return 200.")
+        void shouldAPostToAuthenticateWithValidCredentialsReturn200(){
+
+            var authRequest = new AuthRequest(email, password);
+
+            given()
+            .contentType(ContentType.JSON)
+            .body(authRequest)
+            .when()
+            .post()
+            .then()
+            .statusCode(200)
+            .body("token", notNullValue());
+
+        }
+
+        @Tag("ApiTest")
+        @Tag("IntegrationTest")
+        @Test
+        @DisplayName("Should a post to authenticate with invalid credentials return 401.")
+        void shouldAPostToAuthenticateWithValidCredentialsReturn401(){
+
+            var invalidAuthRequest = new AuthRequest("somemail", "somePassWord");
+
+            given()
+            .contentType(ContentType.JSON)
+            .body(invalidAuthRequest)
+            .when()
+            .post()
+            .then()
+            .statusCode(401);
+
         }
     }
 }
