@@ -70,7 +70,7 @@ public class GoalsTest extends BaseTest {
     }
 
     @Test
-    @DisplayName("Teste create goal successfully")
+    @DisplayName("Test create goal successfully")
     @Tag("UiTest")
     void testCreateGoalSuccessfully() {
         String categoryName = faker.commerce().productName();
@@ -87,4 +87,159 @@ public class GoalsTest extends BaseTest {
         assertThat(limitText).contains("R$ 500,00");
     }
 
+    @Test
+    @DisplayName("Test Create Goal Invalid Vaalue Shows Error")
+    @Tag("UiTest")
+    void testCreateGoalInvalidValueShowsError() {
+        String categoryName = faker.commerce().productName();
+        String month = "2025-10";
+        String invalidLimit = "-100";
+
+        homePage.createRootCategory(categoryName);
+        waitForSuccess();
+
+        homePage.createGoal(categoryName, month, invalidLimit);
+        waitForSuccess();
+
+        By toastLocator = By.xpath("//li[@role='status']");
+        String toastText = driver.findElement(toastLocator).getText().toLowerCase();
+        assertThat(toastText).contains("preencha categoria, mês e limite > 0");
+    }
+
+    @Test
+    @Tag("UiTest")
+    @DisplayName("Test Update Goal Successfully")
+    void testUpdateGoalSuccessfully() {
+        String categoryName = faker.commerce().productName();
+        String month = "2025-12";
+
+        homePage.createRootCategory(categoryName);
+        waitForSuccess();
+
+        homePage.createGoal(categoryName, month, "200.00");
+        waitForSuccess();
+
+        homePage.createGoal(categoryName, month, "900.00");
+        waitForSuccess();
+
+        homePage.getDisplayedGoalLimit();
+
+        String limitText = homePage.getDisplayedGoalLimit();
+
+        assertThat(limitText).contains("R$ 900,00");
+    }
+
+    @Test
+    @Tag("UiTest")
+    @DisplayName("Test analyzing goal status according to expenses")
+    void testAnalyzingGoalStatusAccordingToExpenses() {
+        String categoryName = faker.commerce().productName();
+        String expense1 = faker.commerce().productName();
+        String expense2 = faker.commerce().productName();
+        String expense3 = faker.commerce().productName();
+        String month = "2025-12";
+        String dateExpense = "10-12-2025";
+
+        homePage.createRootCategory(categoryName);
+        waitForSuccess();
+
+        homePage.createGoal(categoryName, month, "100.00");
+        waitForSuccess();
+
+        homePage.createExpense(categoryName, expense1, 99.00, dateExpense);
+        waitForSuccess();
+
+        String status1 = homePage.getGoalStatus();
+        assertThat(status1).contains("Dentro da meta");
+
+        homePage.createExpense(categoryName, expense2, 1.00, dateExpense);
+        waitForSuccess();
+
+        String status2 = homePage.getGoalStatus();
+        assertThat(status2).contains("Dentro da meta");
+
+        homePage.createExpense(categoryName, expense3, 1.00, dateExpense);
+        waitForSuccess();
+
+        String status3 = homePage.getGoalStatus();
+        assertThat(status3).contains("Meta EXCEDIDA");
+    }
+
+    @Test
+    @Tag("UiTest")
+    @DisplayName("Test goal status when switching months with different limits and expenses")
+    void testGoalStatusSwitchingMonths() {
+
+        String categoryName = faker.commerce().productName();
+        String expenseName = faker.commerce().productName();
+
+        String monthAug = "2025-08";
+        String monthSep = "2025-09";
+        String dateExpense = "09-09-2025";
+
+        homePage.createRootCategory(categoryName);
+        waitForSuccess();
+
+        homePage.createGoal(categoryName, monthAug, "100.00");
+        waitForSuccess();
+
+        homePage.createGoal(categoryName, monthSep, "200.00");
+        waitForSuccess();
+
+        homePage.createExpense(categoryName, expenseName, 250.00, dateExpense);
+        waitForSuccess();
+
+        homePage.selectGoalMonth(monthSep);
+        waitForSuccess();
+
+        String statusSep = homePage.getGoalStatus();
+        assertThat(statusSep).contains("Meta EXCEDIDA");
+
+        homePage.selectGoalMonth(monthAug);
+        waitForSuccess();
+
+        String status = homePage.getGoalStatus();
+        assertThat(status).contains("Dentro da meta");
+    }
+
+    @Test
+    @Tag("UiTest")
+    @DisplayName("Test multiple goals in the same month with status changes")
+    void testMultipleGoalsSameMonthStatus() {
+        String category1 = faker.commerce().productName();
+        String category2 = faker.commerce().productName();
+
+        String expense1Cat1 = faker.commerce().productName();
+        String expense2Cat2 = faker.commerce().productName();
+
+        String month = "2025-12";
+        String dateExpense = "15-12-2025";
+
+        homePage.createRootCategory(category1);
+        waitForSuccess();
+        homePage.createRootCategory(category2);
+        waitForSuccess();
+
+        homePage.createGoal(category1, month, "100.00");
+        waitForSuccess();
+        homePage.createGoal(category2, month, "200.00");
+        waitForSuccess();
+
+        homePage.createExpense(category1, expense1Cat1, 50.00, dateExpense);
+        waitForSuccess();
+        homePage.createExpense(category2, expense2Cat2, 250.00, dateExpense);
+        waitForSuccess();
+
+        homePage.selectGoalCategory(category1);
+        waitForSuccess();
+
+        String statusCat1 = homePage.getGoalStatus();
+        assertThat(statusCat1).contains("Dentro da meta");
+
+        homePage.selectGoalCategory(category2);
+        waitForSuccess();
+
+        String statusCat2 = homePage.getGoalStatus();
+        assertThat(statusCat2).contains("Meta EXCEDIDA");
+    }
 }
