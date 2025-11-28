@@ -477,4 +477,90 @@ public class CategoryJpaRepositoryTest {
             assertThat(path).isNull();
         }
     }
+
+    @Nested
+    @DisplayName("move Tests")
+    class MoveTests {
+
+        private CategoryEntity newParent;
+
+        @BeforeEach
+        void setupNested() {
+            newParent = new CategoryEntity("new-parent", USER_ID_1, "NewParent", null, "NewParent");
+            entityManager.persist(newParent);
+            entityManager.flush();
+            entityManager.clear();
+        }
+
+        @Test
+        @DisplayName("Should update parentId and path when valid")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldMoveWhenValid() {
+            String newPath = "NewParent/Electronics";
+            int updated = repository.move(
+                    category1.getId(),
+                    USER_ID_1,
+                    newParent.getId(),
+                    newPath
+            );
+            entityManager.flush();
+            entityManager.clear();
+
+            assertThat(updated).isEqualTo(1);
+
+            CategoryEntity movedEntity =
+                    entityManager.find(CategoryEntity.class, category1.getId());
+
+            assertThat(movedEntity.getParentId()).isEqualTo(newParent.getId());
+            assertThat(movedEntity.getPath()).isEqualTo(newPath);
+        }
+
+        @Test
+        @DisplayName("Should update parentId to null and path when moving to root")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldMoveToRoot() {
+            CategoryEntity child = new CategoryEntity("c", USER_ID_1, "Child", category1.getId(), "Electronics/Child");
+            entityManager.persist(child);
+            entityManager.flush();
+            entityManager.clear();
+
+            String newPath = "Child";
+            int updated = repository.move(
+                    child.getId(),
+                    USER_ID_1,
+                    null,
+                    newPath
+            );
+            entityManager.flush();
+            entityManager.clear();
+
+            assertThat(updated).isEqualTo(1);
+
+            CategoryEntity movedEntity =
+                    entityManager.find(CategoryEntity.class, child.getId());
+
+            assertThat(movedEntity.getParentId()).isNull();
+            assertThat(movedEntity.getPath()).isEqualTo(newPath);
+        }
+
+        @Test
+        @DisplayName("Should NOT move when userId does not match")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldNotMoveWhenUserDoesNotMatch() {
+            int updated = repository.move(category1.getId(), USER_ID_2, newParent.getId(), "X");
+            assertThat(updated).isEqualTo(0);
+        }
+
+        @Test
+        @DisplayName("Should NOT move when id does not exist")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldNotMoveWhenIdDoesNotExist() {
+            int updated = repository.move("invalid-id", USER_ID_1, newParent.getId(), "X");
+            assertThat(updated).isEqualTo(0);
+        }
+    }
 }
