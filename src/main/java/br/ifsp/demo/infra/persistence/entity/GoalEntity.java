@@ -27,7 +27,7 @@ public class GoalEntity {
     private String categoryId;
 
     // formato "YYYY-MM"
-    @Column(nullable = false, length = 7)
+    @Column(name = "\"month\"", nullable = false, length = 7)
     private String month;
 
     @Column(nullable = false, precision = 15, scale = 2)
