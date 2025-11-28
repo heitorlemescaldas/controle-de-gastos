@@ -306,4 +306,261 @@ public class CategoryJpaRepositoryTest {
             assertThat(exists).isFalse();
         }
     }
+
+    @Nested
+    @DisplayName("existsSiblingByNormalized Tests")
+    class ExistsSiblingByNormalizedTests {
+
+        private CategoryEntity parent;
+        private CategoryEntity sibling;
+
+        @BeforeEach
+        void setupNested() {
+            parent = new CategoryEntity("parent-1", USER_ID_1, "Root", null, "Root");
+            entityManager.persist(parent);
+
+            sibling = new CategoryEntity("sibling-1", USER_ID_1, "Category", parent.getId(), "Root/Category");
+            entityManager.persist(sibling);
+            entityManager.flush();
+            entityManager.clear();
+        }
+
+        @Test
+        @DisplayName("Should return true when sibling with normalized name exists under the same parent")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldReturnTrueWhenSiblingExists() {
+            boolean exists = repository.existsSiblingByNormalized(
+                    USER_ID_1,
+                    parent.getId(),
+                    "category"
+            );
+            assertThat(exists).isTrue();
+        }
+
+        @Test
+        @DisplayName("Should return true when sibling with normalized name exists under root (parentId is null)")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldReturnTrueWhenSiblingExistsUnderRoot() {
+            boolean exists = repository.existsSiblingByNormalized(
+                    USER_ID_1,
+                    null,
+                    "electronics"
+            );
+            assertThat(exists).isTrue();
+        }
+
+        @Test
+        @DisplayName("Should return false when sibling does not exist under the same parent")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldReturnFalseWhenSiblingDoesNotExist() {
+            boolean exists = repository.existsSiblingByNormalized(
+                    USER_ID_1,
+                    parent.getId(),
+                    "nonexistent"
+            );
+            assertThat(exists).isFalse();
+        }
+
+        @Test
+        @DisplayName("Should return false when sibling exists but user does not match")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldReturnFalseWhenUserDoesNotMatch() {
+            boolean exists = repository.existsSiblingByNormalized(
+                    USER_ID_2,
+                    parent.getId(),
+                    "category"
+            );
+            assertThat(exists).isFalse();
+        }
+
+        @Test
+        @DisplayName("Should return false when sibling exists but under a different parent")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldReturnFalseWhenSiblingUnderDifferentParent() {
+            boolean exists = repository.existsSiblingByNormalized(
+                    USER_ID_1,
+                    category1.getId(),
+                    "category"
+            );
+            assertThat(exists).isFalse();
+        }
+    }
+
+    @Nested
+    @DisplayName("hasChildren Tests")
+    class HasChildrenTests {
+
+        private CategoryEntity parent;
+        private CategoryEntity child;
+
+        @BeforeEach
+        void setupNested() {
+            parent = new CategoryEntity("parent-2", USER_ID_1, "Parent", null, "Parent");
+            entityManager.persist(parent);
+
+            child = new CategoryEntity("child-2", USER_ID_1, "Child", parent.getId(), "Parent/Child");
+            entityManager.persist(child);
+            entityManager.flush();
+            entityManager.clear();
+        }
+
+        @Test
+        @DisplayName("Should return true when category has children and user matches")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldReturnTrueWhenHasChildren() {
+            boolean hasChildren = repository.hasChildren(parent.getId(), USER_ID_1);
+            assertThat(hasChildren).isTrue();
+        }
+
+        @Test
+        @DisplayName("Should return false when category has no children")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldReturnFalseWhenHasNoChildren() {
+            boolean hasChildren = repository.hasChildren(category2.getId(), USER_ID_2);
+            assertThat(hasChildren).isFalse();
+        }
+
+        @Test
+        @DisplayName("Should return false when category exists but user does not match")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldReturnFalseWhenUserDoesNotMatch() {
+            boolean hasChildren = repository.hasChildren(parent.getId(), USER_ID_2);
+            assertThat(hasChildren).isFalse();
+        }
+
+        @Test
+        @DisplayName("Should return false when category id does not exist")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldReturnFalseWhenIdDoesNotExist() {
+            boolean hasChildren = repository.hasChildren("non-existent-id", USER_ID_1);
+            assertThat(hasChildren).isFalse();
+        }
+    }
+
+    @Nested
+    @DisplayName("findPath Tests")
+    class FindPathTests {
+
+        @Test
+        @DisplayName("Should return path when id and user match")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldReturnPathWhenValid() {
+            String path = repository.findPath(category1.getId(), USER_ID_1);
+            assertThat(path).isEqualTo(category1.getPath());
+        }
+
+        @Test
+        @DisplayName("Should return null when user does not match")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldReturnNullWhenUserDoesNotMatch() {
+            String path = repository.findPath(category1.getId(), USER_ID_2);
+            assertThat(path).isNull();
+        }
+
+        @Test
+        @DisplayName("Should return null when id does not exist")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldReturnNullWhenIdDoesNotExist() {
+            String path = repository.findPath("invalid-id", USER_ID_1);
+            assertThat(path).isNull();
+        }
+    }
+
+    @Nested
+    @DisplayName("move Tests")
+    class MoveTests {
+
+        private CategoryEntity newParent;
+
+        @BeforeEach
+        void setupNested() {
+            newParent = new CategoryEntity("new-parent", USER_ID_1, "NewParent", null, "NewParent");
+            entityManager.persist(newParent);
+            entityManager.flush();
+            entityManager.clear();
+        }
+
+        @Test
+        @DisplayName("Should update parentId and path when valid")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldMoveWhenValid() {
+            String newPath = "NewParent/Electronics";
+            int updated = repository.move(
+                    category1.getId(),
+                    USER_ID_1,
+                    newParent.getId(),
+                    newPath
+            );
+            entityManager.flush();
+            entityManager.clear();
+
+            assertThat(updated).isEqualTo(1);
+
+            CategoryEntity movedEntity =
+                    entityManager.find(CategoryEntity.class, category1.getId());
+
+            assertThat(movedEntity.getParentId()).isEqualTo(newParent.getId());
+            assertThat(movedEntity.getPath()).isEqualTo(newPath);
+        }
+
+        @Test
+        @DisplayName("Should update parentId to null and path when moving to root")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldMoveToRoot() {
+            CategoryEntity child = new CategoryEntity("c", USER_ID_1, "Child", category1.getId(), "Electronics/Child");
+            entityManager.persist(child);
+            entityManager.flush();
+            entityManager.clear();
+
+            String newPath = "Child";
+            int updated = repository.move(
+                    child.getId(),
+                    USER_ID_1,
+                    null,
+                    newPath
+            );
+            entityManager.flush();
+            entityManager.clear();
+
+            assertThat(updated).isEqualTo(1);
+
+            CategoryEntity movedEntity =
+                    entityManager.find(CategoryEntity.class, child.getId());
+
+            assertThat(movedEntity.getParentId()).isNull();
+            assertThat(movedEntity.getPath()).isEqualTo(newPath);
+        }
+
+        @Test
+        @DisplayName("Should NOT move when userId does not match")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldNotMoveWhenUserDoesNotMatch() {
+            int updated = repository.move(category1.getId(), USER_ID_2, newParent.getId(), "X");
+            assertThat(updated).isEqualTo(0);
+        }
+
+        @Test
+        @DisplayName("Should NOT move when id does not exist")
+        @Tag("IntegrationTest")
+        @Tag("PersistenceTest")
+        void shouldNotMoveWhenIdDoesNotExist() {
+            int updated = repository.move("invalid-id", USER_ID_1, newParent.getId(), "X");
+            assertThat(updated).isEqualTo(0);
+        }
+    }
 }
