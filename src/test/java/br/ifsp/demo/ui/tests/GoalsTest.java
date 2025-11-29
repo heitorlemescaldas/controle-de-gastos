@@ -26,9 +26,10 @@ public class GoalsTest extends BaseTest {
     private final Faker faker = new Faker();
     private HomePage homePage;
     private final String BACKEND_BASE = "http://localhost:8080";
+    private final By toastLocator = By.xpath("//li[@role='status']");
+
 
     private void waitForSuccess() {
-        By toastLocator = By.xpath("//li[@role='status']");
         try {
             wait.until(ExpectedConditions.visibilityOfElementLocated(toastLocator));
             Thread.sleep(1200);
@@ -101,7 +102,6 @@ public class GoalsTest extends BaseTest {
         homePage.createGoal(categoryName, month, invalidLimit);
         waitForSuccess();
 
-        By toastLocator = By.xpath("//li[@role='status']");
         String toastText = driver.findElement(toastLocator).getText().toLowerCase();
         assertThat(toastText).contains("preencha categoria, mês e limite > 0");
     }
@@ -241,5 +241,21 @@ public class GoalsTest extends BaseTest {
 
         String statusCat2 = homePage.getGoalStatus();
         assertThat(statusCat2).contains("Meta EXCEDIDA");
+    }
+
+    @Test
+    @Tag("UiTest")
+    @DisplayName("Should show error when creating goal without category")
+    void testCreateGoalWithoutCategory() {
+        String month = "2025-10";
+        String limit = "100";
+
+        homePage.createGoalWithoutCategory(month,limit);
+
+        waitForSuccess();
+
+        String msg = driver.findElement(toastLocator).getText().toLowerCase();
+
+        assertThat(msg).contains("preencha categoria, mês e limite > 0");
     }
 }

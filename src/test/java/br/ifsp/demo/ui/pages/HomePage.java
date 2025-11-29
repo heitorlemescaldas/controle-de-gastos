@@ -130,6 +130,14 @@ public class HomePage extends BasePage {
         click(goalSaveButton);
     }
 
+
+    public void createGoalWithoutCategory(String month, String limit) {
+        openGoalsSection();
+        type(goalMonthInput, month);
+        type(goalLimitInput, limit);
+        click(goalSaveButton);
+    }
+
     public String getDisplayedGoalLimit() {
         wait.until(ExpectedConditions.visibilityOfElementLocated(goalLimitValue));
         return driver.findElement(goalLimitValue).getText();
@@ -174,5 +182,4 @@ public class HomePage extends BasePage {
         selectOption(goalCategorySelectTrigger, categoryName);
         wait.until(driver -> !getGoalStatus().isEmpty());
     }
-
 }
