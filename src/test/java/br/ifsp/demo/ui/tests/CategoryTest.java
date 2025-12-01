@@ -24,10 +24,10 @@ public class CategoryTest extends BaseTest {
     private final Faker faker = new Faker();
     private HomePage homePage;
     private final String BACKEND_BASE = "http://localhost:8080";
+    private final By toastLocator = By.xpath("//li[@role='status']");
+
 
     private void waitForSuccess() {
-        By toastLocator = By.xpath("//li[@role='status']");
-
         try {
             wait.until(ExpectedConditions.visibilityOfElementLocated(toastLocator));
             Thread.sleep(1500);
@@ -144,5 +144,54 @@ public class CategoryTest extends BaseTest {
         waitForSuccess();
 
         homePage.selectCategoryForAction(newParent + "/" + categoryToMove);
+    }
+
+
+    @Tag("UiTest")
+    @DisplayName("Test create root category Invalid Characters")
+    @Test
+    void testCreateRootCategoryInvalidCharacters() {
+        String categoryName = "=";
+
+        homePage.createRootCategory(categoryName);
+        waitForSuccess();
+
+        String msg = driver.findElement(toastLocator).getText().toLowerCase();
+        assertThat(msg).contains("nome inválido: caracteres proibidos");
+    }
+
+    @Tag("UiTest")
+    @DisplayName("Test create child category successfully")
+    @Test
+    void testCreateChildCategoryInvalidCharacters() {
+        String rootName = "Root " + System.currentTimeMillis();
+        String childName = "=";
+
+        homePage.createRootCategory(rootName);
+        waitForSuccess();
+
+        homePage.createChildCategory(rootName, childName);
+        waitForSuccess();
+
+        String msg = driver.findElement(toastLocator).getText().toLowerCase();
+        assertThat(msg).contains("nome inválido: caracteres proibidos");
+    }
+
+    @Tag("UiTest")
+    @DisplayName("Test rename category successfully")
+    @Test
+    void testRenameCategoryInvalidCharacters() {
+        String originalName = "RenameMe " + System.currentTimeMillis();
+        String newName = "=";
+
+        homePage.createRootCategory(originalName);
+        waitForSuccess();
+
+        homePage.selectCategoryForAction(originalName);
+        homePage.renameSelectedCategory(newName);
+        waitForSuccess();
+
+        String msg = driver.findElement(toastLocator).getText().toLowerCase();
+        assertThat(msg).contains("nome inválido: caracteres proibidos");
     }
 }
