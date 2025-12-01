@@ -43,6 +43,9 @@ public class HomePage extends BasePage {
     private final By expenseDateInput = By.xpath("//input[@type='date']");
     private final By expenseAddButton = By.xpath("//button[contains(.,'Adicionar Transação')]");
 
+    private final By transactionTypeSelectTrigger = By.xpath("//div[label[text()='Tipo']]//button[@role='combobox']");
+    private final By toastMessage = By.xpath("//li[contains(@class, 'toast')]//div[contains(@class, 'font-semibold')] | //div[contains(@class, 'toast')]//div[contains(@class, 'font-semibold')]");
+
 
     public HomePage(WebDriver driver, WebDriverWait wait) {
         super(driver, wait);
@@ -114,7 +117,6 @@ public class HomePage extends BasePage {
         try {
             Thread.sleep(millis);
         } catch (InterruptedException e) {
-            // ignore
         }
     }
 
@@ -129,7 +131,6 @@ public class HomePage extends BasePage {
         type(goalLimitInput, limit);
         click(goalSaveButton);
     }
-
 
     public void createGoalWithoutCategory(String month, String limit) {
         openGoalsSection();
@@ -148,26 +149,6 @@ public class HomePage extends BasePage {
         return driver.findElement(goalStatusText).getText();
     }
 
-    public void createExpense(String categoryName, String description, double amount, String date) {
-
-        selectOption(expenseCategorySelectTrigger, categoryName);
-
-        WebElement descInput = wait.until(ExpectedConditions.visibilityOfElementLocated(expenseDescriptionInput));
-        descInput.clear();
-        descInput.sendKeys(description);
-
-        WebElement amountInput = wait.until(ExpectedConditions.visibilityOfElementLocated(expenseAmountInput));
-        amountInput.clear();
-        amountInput.sendKeys(String.valueOf(amount));
-
-        WebElement dateInput = wait.until(ExpectedConditions.visibilityOfElementLocated(expenseDateInput));
-        dateInput.clear();
-        dateInput.sendKeys(date);
-
-        WebElement addButton = wait.until(ExpectedConditions.elementToBeClickable(expenseAddButton));
-        addButton.click();
-    }
-
     public void selectGoalMonth(String month) {
         scrollToElement(goalMonthInput);
         WebElement monthInput = wait.until(ExpectedConditions.visibilityOfElementLocated(goalMonthInput));
@@ -181,5 +162,34 @@ public class HomePage extends BasePage {
     public void selectGoalCategory(String categoryName) {
         selectOption(goalCategorySelectTrigger, categoryName);
         wait.until(driver -> !getGoalStatus().isEmpty());
+    }
+
+    public void addTransaction(String description, String amount, String type, String date, String categoryName) {
+        WebElement descInput = wait.until(ExpectedConditions.visibilityOfElementLocated(expenseDescriptionInput));
+        descInput.clear();
+        descInput.sendKeys(description);
+
+        WebElement amtInput = wait.until(ExpectedConditions.visibilityOfElementLocated(expenseAmountInput));
+        amtInput.clear();
+        amtInput.sendKeys(amount);
+
+        selectOption(transactionTypeSelectTrigger, type);
+
+        WebElement dateInput = wait.until(ExpectedConditions.visibilityOfElementLocated(expenseDateInput));
+        dateInput.clear();
+        dateInput.sendKeys(date);
+
+        selectOption(expenseCategorySelectTrigger, categoryName);
+
+        WebElement addButton = wait.until(ExpectedConditions.elementToBeClickable(expenseAddButton));
+        addButton.click();
+    }
+
+    public String getToastText() {
+        return wait.until(ExpectedConditions.visibilityOfElementLocated(toastMessage)).getText();
+    }
+
+    public void createExpense(String categoryName, String description, double amount, String date) {
+        addTransaction(description, String.valueOf(amount), "Despesa (DEBIT)", date, categoryName);
     }
 }
