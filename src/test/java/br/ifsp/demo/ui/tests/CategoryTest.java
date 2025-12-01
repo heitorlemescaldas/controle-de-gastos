@@ -4,6 +4,7 @@ import br.ifsp.demo.ui.pages.HomePage;
 import br.ifsp.demo.ui.pages.LoginPage;
 import br.ifsp.demo.ui.util.BaseTest;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.By;
@@ -23,21 +24,18 @@ public class CategoryTest extends BaseTest {
     private final Faker faker = new Faker();
     private HomePage homePage;
     private final String BACKEND_BASE = "http://localhost:8080";
+    private final By toastLocator = By.xpath("//li[@role='status']");
+
 
     private void waitForSuccess() {
-        By toastLocator = By.xpath("//li[@role='status']");
-
         try {
             wait.until(ExpectedConditions.visibilityOfElementLocated(toastLocator));
             Thread.sleep(1500);
-        } catch (Exception e) {
-            // Se não aparecer toast, pode ser que foi muito rápido, segue o baile
-        }
+        } catch (Exception e) {}
     }
 
     @BeforeEach
     void setupTestEnvironment() {
-        // Cria usuário se não existir
         try {
             URL url = new URL(BACKEND_BASE + "/api/v1/register");
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
@@ -47,9 +45,7 @@ public class CategoryTest extends BaseTest {
             String payload = String.format("{\"name\":\"Admin\",\"lastname\":\"Admin\",\"email\":\"%s\",\"password\":\"%s\"}", VALID_EMAIL, VALID_PASSWORD);
             try (OutputStream os = con.getOutputStream()) { os.write(payload.getBytes(StandardCharsets.UTF_8)); }
             con.getResponseCode();
-        } catch (Exception e) {
-            // IGnora o erro
-        }
+        } catch (Exception e) {}
 
         if (!driver.getCurrentUrl().contains("/login")) {
             driver.get(BASE_URL + "/login");
@@ -67,6 +63,7 @@ public class CategoryTest extends BaseTest {
     }
 
     @Tag("UiTest")
+    @DisplayName("Test create root category successfully")
     @Test
     void testCreateRootCategorySuccessfully() {
         String categoryName = faker.commerce().productName() + " " + System.currentTimeMillis();
@@ -78,6 +75,7 @@ public class CategoryTest extends BaseTest {
     }
 
     @Tag("UiTest")
+    @DisplayName("Test create child category successfully")
     @Test
     void testCreateChildCategorySuccessfully() {
         String rootName = "Root " + System.currentTimeMillis();
@@ -93,6 +91,7 @@ public class CategoryTest extends BaseTest {
     }
 
     @Tag("UiTest")
+    @DisplayName("Test rename category successfully")
     @Test
     void testRenameCategorySuccessfully() {
         String originalName = "RenameMe " + System.currentTimeMillis();
@@ -109,6 +108,7 @@ public class CategoryTest extends BaseTest {
     }
 
     @Tag("UiTest")
+    @DisplayName("Test delete category successfully")
     @Test
     void testDeleteCategorySuccessfully() {
         String categoryToDelete = "DeleteMe " + System.currentTimeMillis();
@@ -123,12 +123,11 @@ public class CategoryTest extends BaseTest {
         try {
             homePage.selectCategoryForAction(categoryToDelete);
             assertThat(false).as("Categoria não deveria ser encontrada").isTrue();
-        } catch (Exception e) {
-            // Sucesso: não achou o elemento
-        }
+        } catch (Exception e) {}
     }
 
     @Tag("UiTest")
+    @DisplayName("Test move category successfully")
     @Test
     void testMoveCategorySuccessfully() {
         String categoryToMove = "ToMove " + System.currentTimeMillis();
@@ -145,5 +144,54 @@ public class CategoryTest extends BaseTest {
         waitForSuccess();
 
         homePage.selectCategoryForAction(newParent + "/" + categoryToMove);
+    }
+
+
+    @Tag("UiTest")
+    @DisplayName("Test create root category Invalid Characters")
+    @Test
+    void testCreateRootCategoryInvalidCharacters() {
+        String categoryName = "=";
+
+        homePage.createRootCategory(categoryName);
+        waitForSuccess();
+
+        String msg = driver.findElement(toastLocator).getText().toLowerCase();
+        assertThat(msg).contains("nome inválido: caracteres proibidos");
+    }
+
+    @Tag("UiTest")
+    @DisplayName("Test create child category successfully")
+    @Test
+    void testCreateChildCategoryInvalidCharacters() {
+        String rootName = "Root " + System.currentTimeMillis();
+        String childName = "=";
+
+        homePage.createRootCategory(rootName);
+        waitForSuccess();
+
+        homePage.createChildCategory(rootName, childName);
+        waitForSuccess();
+
+        String msg = driver.findElement(toastLocator).getText().toLowerCase();
+        assertThat(msg).contains("nome inválido: caracteres proibidos");
+    }
+
+    @Tag("UiTest")
+    @DisplayName("Test rename category successfully")
+    @Test
+    void testRenameCategoryInvalidCharacters() {
+        String originalName = "RenameMe " + System.currentTimeMillis();
+        String newName = "=";
+
+        homePage.createRootCategory(originalName);
+        waitForSuccess();
+
+        homePage.selectCategoryForAction(originalName);
+        homePage.renameSelectedCategory(newName);
+        waitForSuccess();
+
+        String msg = driver.findElement(toastLocator).getText().toLowerCase();
+        assertThat(msg).contains("nome inválido: caracteres proibidos");
     }
 }

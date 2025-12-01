@@ -250,7 +250,7 @@ public class GoalsTest extends BaseTest {
         String month = "2025-10";
         String limit = "100";
 
-        homePage.createGoalWithoutCategory(month,limit);
+        homePage.createGoal(month,limit);
 
         waitForSuccess();
 
