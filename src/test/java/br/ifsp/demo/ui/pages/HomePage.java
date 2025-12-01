@@ -131,7 +131,7 @@ public class HomePage extends BasePage {
     }
 
 
-    public void createGoalWithoutCategory(String month, String limit) {
+    public void createGoal(String month, String limit) {
         openGoalsSection();
         type(goalMonthInput, month);
         type(goalLimitInput, limit);
