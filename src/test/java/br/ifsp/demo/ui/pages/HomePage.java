@@ -185,6 +185,25 @@ public class HomePage extends BasePage {
         addButton.click();
     }
 
+    public void addTransaction(String description, String amount, String type, String date) {
+        WebElement descInput = wait.until(ExpectedConditions.visibilityOfElementLocated(expenseDescriptionInput));
+        descInput.clear();
+        descInput.sendKeys(description);
+
+        WebElement amtInput = wait.until(ExpectedConditions.visibilityOfElementLocated(expenseAmountInput));
+        amtInput.clear();
+        amtInput.sendKeys(amount);
+
+        selectOption(transactionTypeSelectTrigger, type);
+
+        WebElement dateInput = wait.until(ExpectedConditions.visibilityOfElementLocated(expenseDateInput));
+        dateInput.clear();
+        dateInput.sendKeys(date);
+
+        WebElement addButton = wait.until(ExpectedConditions.elementToBeClickable(expenseAddButton));
+        addButton.click();
+    }
+
     public String getToastText() {
         return wait.until(ExpectedConditions.visibilityOfElementLocated(toastMessage)).getText();
     }
