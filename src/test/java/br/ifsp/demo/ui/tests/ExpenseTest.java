@@ -142,4 +142,81 @@ public class ExpenseTest extends BaseTest {
         String toastText = driver.findElement(toastLocator).getText().toLowerCase();
         assertThat(toastText).contains("selecione uma categoria");
     }
+
+    @Test
+    @DisplayName("Test transaction with invalid date shows error")
+    @Tag("UiTest")
+    void testTransactionInvalidDateShowsError() {
+        String categoryName = faker.commerce().productName();
+        homePage.createRootCategory(categoryName);
+        waitForSuccess();
+
+        String description = faker.lorem().sentence(3);
+        String amount = "99.99";
+        String badDate = "99-99-9999";
+
+        homePage.addTransaction(description, amount, "Despesa (DEBIT)", badDate, categoryName);
+        waitForSuccess();
+
+        String toastText = driver.findElement(toastLocator).getText().toLowerCase();
+        assertThat(toastText).contains("data inválida");
+    }
+
+    @Test
+    @DisplayName("Test transaction with empty description shows error")
+    @Tag("UiTest")
+    void testTransactionEmptyDescriptionShowsError() {
+        String categoryName = faker.commerce().productName();
+        homePage.createRootCategory(categoryName);
+        waitForSuccess();
+
+        String amount = "80.00";
+        String date = "20-11-2025";
+
+        homePage.addTransaction("", amount, "Receita (CREDIT)", date, categoryName);
+        waitForSuccess();
+
+        String toastText = driver.findElement(toastLocator).getText().toLowerCase();
+        assertThat(toastText).contains("descrição é obrigatória");
+    }
+
+    @Test
+    @DisplayName("Test transaction with extremely large amount do not shows error")
+    @Tag("UiTest")
+    void testTransactionAmountOverflowShowsError() {
+        String categoryName = faker.commerce().productName();
+        homePage.createRootCategory(categoryName);
+        waitForSuccess();
+
+        String description = faker.lorem().sentence();
+        String amount = "9999999999999999.99";
+        String date = "10-11-2025";
+
+        homePage.addTransaction(description, amount, "Despesa (DEBIT)", date, categoryName);
+        waitForSuccess();
+
+        String toastText = driver.findElement(toastLocator).getText().toLowerCase();
+        assertThat(toastText).contains("transação criada com sucesso");
+    }
+
+    @Test
+    @DisplayName("Test multiple transactions sequentially")
+    @Tag("UiTest")
+    void testMultipleTransactionsSequentially() {
+        String categoryName = faker.commerce().productName();
+        homePage.createRootCategory(categoryName);
+        waitForSuccess();
+
+        for (int i = 0; i < 3; i++) {
+            String description = "Transação " + i;
+            String amount = String.valueOf(10 * (i + 1));
+            String date = "05-11-2025";
+            homePage.addTransaction(description, amount, "Despesa (DEBIT)", date, categoryName);
+            waitForSuccess();
+        }
+
+        String toastText = homePage.getToastText().toLowerCase();
+        assertThat(toastText).contains("transação criada com sucesso");
+    }
+
 }
